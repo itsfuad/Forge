@@ -224,12 +224,19 @@
   <a class="sub" href="#raii">RAII &amp; Aliases</a>
 
   <a class="section-title">Type System</a>
+  <a class="sub" href="#defaultregion">Default Region</a>
   <a class="sub" href="#generics">Region Polymorphism</a>
-  <a class="sub" href="#constraints">Region Constraints</a>
+  <a class="sub" href="#constraints">Constraints</a>
+
+  <a class="section-title">Methods &amp; Interfaces</a>
+  <a class="sub" href="#methods">Methods</a>
+  <a class="sub" href="#interfaces">Interfaces</a>
+  <a class="sub" href="#receiver-regions">Receiver Regions</a>
 
   <a class="section-title">Lifetimes</a>
   <a class="sub" href="#lifetime-rules">Formal Lifetime Rules</a>
-  <a class="sub" href="#conditionals">Conditionals &amp; Loops</a>
+  <a class="sub" href="#conditionals">Conditionals</a>
+  <a class="sub" href="#loops">Loops</a>
   <a class="sub" href="#condmove">Conditional Moves</a>
 
   <a class="section-title">Concurrency</a>
@@ -361,59 +368,199 @@ print(p1.X);  <span class="cm">// ✓ allowed: `b` is dead after the inc call ab
 
   <hr>
 
-  <!-- ── 5. GENERICS ── -->
-  <h2 id="generics"><span class="section-num">5</span> Generics &amp; Region Polymorphism</h2>
+  <!-- ── 5. DEFAULT REGION ── -->
+  <h2 id="defaultregion"><span class="section-num">5</span> Default Region</h2>
+  <p>The region annotation on a type is <strong>optional</strong>. When omitted, the region defaults to <code>@stack</code>. This keeps common local variable declarations clean while still permitting explicit region control whenever needed.</p>
+
+  <pre><code><span class="kw">let</span> a: <span class="ty">i32</span> = <span class="st">10</span>;            <span class="cm">// i32@stack  — default</span>
+<span class="kw">let</span> b: <span class="ty">i32</span><span class="op">@</span><span class="reg">heap</span> = <span class="st">10</span>;        <span class="cm">// i32@heap   — explicit</span>
+<span class="kw">let</span> c: <span class="ty">Point</span> = <span class="ty">Point</span>{...};   <span class="cm">// Point@stack — default</span>
+<span class="kw">let</span> d: <span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span> = <span class="ty">Point</span>{...}; <span class="cm">// Point@heap  — explicit</span></code></pre>
+
+  <p>The same rule applies to function parameters and return types:</p>
+  <pre><code><span class="kw">fn</span> <span class="fn">add</span>(a: <span class="ty">i32</span>, b: <span class="ty">i32</span>) -> <span class="ty">i32</span> { ... }
+<span class="cm">// equivalent to: fn add(a: i32@stack, b: i32@stack) -> i32@stack</span>
+
+<span class="kw">fn</span> <span class="fn">make_point</span>() -> <span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span> { ... }
+<span class="cm">// explicit — caller knows the result is heap-allocated</span></code></pre>
+
+  <div class="box note">
+    <div class="box-title">Pointers &amp; Default Region</div>
+    <p>When a pointer type omits the region, it defaults to pointing into <code>@stack</code>: <code>*Point</code> means <code>*Point@stack</code>. If you take a reference to a heap value, the region must be stated explicitly: <code>let p: *Point@heap = &amp;heap_val;</code></p>
+  </div>
+
+  <hr>
+
+  <!-- ── 6. GENERICS ── -->
+  <h2 id="generics"><span class="section-num">6</span> Generics &amp; Region Polymorphism</h2>
   <p>Regions are <strong>first-class type parameters</strong>. A function can be generic over both a value type <code>T</code> and a region <code>R</code>. Region inference applies at call sites, so callers rarely need to name the region explicitly.</p>
 
-  <pre><code><span class="cm">// Explicit region parameter</span>
+  <pre><code><span class="cm">// Explicit region parameter — R inferred at call site</span>
 <span class="kw">fn</span> <span class="fn">first</span>&lt;<span class="ty">T</span>, <span class="ty">R</span>&gt;(slice: <span class="op">*</span>[<span class="ty">T</span>]<span class="op">@</span><span class="ty">R</span>) -> <span class="op">*</span><span class="ty">T</span><span class="op">@</span><span class="ty">R</span> {
     <span class="kw">return</span> &amp;slice[<span class="st">0</span>];
 }
 
-<span class="cm">// Region inferred at call site — caller writes nothing extra</span>
 <span class="kw">let</span> items: [<span class="ty">i32</span>]<span class="op">@</span><span class="reg">heap</span> = [<span class="st">1</span>, <span class="st">2</span>, <span class="st">3</span>];
-<span class="kw">let</span> x = <span class="fn">first</span>(items);  <span class="cm">// R inferred as `heap`</span></code></pre>
+<span class="kw">let</span> x = <span class="fn">first</span>(items);  <span class="cm">// R inferred as `heap` — caller writes nothing</span></code></pre>
 
-  <h2 id="constraints"><span class="section-num">5.1</span> Region Constraints</h2>
-  <p>Without constraints, a region-polymorphic function could receive a <code>static</code> region and attempt mutation, or receive a <code>tls</code> region and pass the result to another thread. Region constraints prevent this.</p>
+  <!-- ── 7. CONSTRAINTS ── -->
+  <h2 id="constraints"><span class="section-num">7</span> Constraints</h2>
 
-  <table>
-    <tr><th>Constraint Syntax</th><th>Meaning</th></tr>
-    <tr><td><code>R: heap</code></td><td>R must be the heap region</td></tr>
-    <tr><td><code>R: heap | stack</code></td><td>R must be heap or stack</td></tr>
-    <tr><td><code>R: allocable</code></td><td>R supports dynamic allocation (heap, user-defined heap regions)</td></tr>
-    <tr><td><code>R: mutable</code></td><td>R allows mutation (excludes <code>static</code>)</td></tr>
-    <tr><td><code>R: thread_safe</code></td><td>R is safe to share across threads (only <code>shared</code>, <code>static</code>)</td></tr>
-  </table>
+  <p><code>constraint</code> is a keyword for defining named constraint groups. Constraints come in two kinds — <strong>region constraints</strong> and <strong>type constraints</strong> — and the kind is inferred from the right-hand side at declaration time.</p>
 
-  <pre><code><span class="cm">// ✓ Only heap-like regions — prevents allocating into `static` or `tls`</span>
-<span class="kw">fn</span> <span class="fn">clone</span>&lt;<span class="ty">T</span>, <span class="ty">R</span>: <span class="reg">allocable</span>&gt;(p: <span class="op">*</span><span class="ty">T</span><span class="op">@</span><span class="ty">R</span>) -> <span class="ty">T</span><span class="op">@</span><span class="ty">R</span> {
+  <div class="box rule">
+    <div class="box-title">Constraint Separation Rule</div>
+    <p>A <strong>region constraint</strong> may only be applied to a region parameter. A <strong>type constraint</strong> may only be applied to a type parameter. Cross-applying one kind to the other is a compile-time error. Mixing region names and type names on the right-hand side of a <code>constraint</code> declaration is also a compile-time error.</p>
+  </div>
+
+  <h3>Declaring Constraints</h3>
+  <pre><code><span class="cm">// Region constraint — RHS contains only region names</span>
+<span class="kw">constraint</span> <span class="ty">Allocable</span> = <span class="reg">heap</span> | <span class="reg">stack</span>;
+<span class="kw">constraint</span> <span class="ty">Mutable</span>   = <span class="reg">heap</span> | <span class="reg">stack</span> | <span class="reg">tls</span>;  <span class="cm">// excludes `static`</span>
+<span class="kw">constraint</span> <span class="ty">ThreadSafe</span> = <span class="reg">shared</span> | <span class="reg">static</span>;
+
+<span class="cm">// Type constraint — RHS contains only types or interfaces</span>
+<span class="kw">constraint</span> <span class="ty">Numeric</span>   = <span class="ty">i32</span> | <span class="ty">i64</span> | <span class="ty">f32</span> | <span class="ty">f64</span>;
+<span class="kw">constraint</span> <span class="ty">Printable</span> = <span class="ty">Stringer</span>;  <span class="cm">// any type satisfying the Stringer interface</span>
+
+<span class="cm">// ✗ Compile error — cannot mix region names and type names in one constraint</span>
+<span class="kw">constraint</span> <span class="ty">Bad</span> = <span class="reg">heap</span> | <span class="ty">i32</span>; <span class="err">// ✗</span></code></pre>
+
+  <h3>Using Constraints</h3>
+  <pre><code><span class="cm">// R is a region parameter — Allocable (region constraint) applies ✓</span>
+<span class="kw">fn</span> <span class="fn">clone</span>&lt;<span class="ty">T</span>, <span class="ty">R</span>: <span class="ty">Allocable</span>&gt;(p: <span class="op">*</span><span class="ty">T</span><span class="op">@</span><span class="ty">R</span>) -> <span class="ty">T</span><span class="op">@</span><span class="ty">R</span> {
     <span class="kw">let</span> copy: <span class="ty">T</span><span class="op">@</span><span class="ty">R</span> = allocate_in&lt;<span class="ty">R</span>&gt;();
     <span class="op">*</span>copy = <span class="op">*</span>p;
     <span class="kw">return</span> copy;
 }
 
-<span class="cm">// ✓ Only mutable regions — no mutating `static` through a pointer</span>
-<span class="kw">fn</span> <span class="fn">inc</span>&lt;<span class="ty">R</span>: <span class="reg">mutable</span>&gt;(p: <span class="op">*</span><span class="ty">Point</span><span class="op">@</span><span class="ty">R</span>) {
-    p.X += <span class="st">1</span>;
-}</code></pre>
+<span class="cm">// T is a type parameter — Numeric (type constraint) applies ✓</span>
+<span class="kw">fn</span> <span class="fn">sum</span>&lt;<span class="ty">T</span>: <span class="ty">Numeric</span>&gt;(a: <span class="ty">T</span>, b: <span class="ty">T</span>) -> <span class="ty">T</span> {
+    <span class="kw">return</span> a + b;
+}
+
+<span class="cm">// ✗ Compile error — Allocable is a region constraint, T is a type parameter</span>
+<span class="kw">fn</span> <span class="fn">bad</span>&lt;<span class="ty">T</span>: <span class="ty">Allocable</span>&gt;(...) <span class="err">// ✗</span>
+
+<span class="cm">// ✗ Compile error — Numeric is a type constraint, R is a region parameter</span>
+<span class="kw">fn</span> <span class="fn">bad</span>&lt;<span class="ty">R</span>: <span class="ty">Numeric</span>&gt;(...) <span class="err">// ✗</span></code></pre>
+
+  <p>Inline region/type names are also valid without a named constraint:</p>
+  <pre><code><span class="kw">fn</span> <span class="fn">inc</span>&lt;<span class="ty">R</span>: <span class="reg">heap</span> | <span class="reg">stack</span>&gt;(p: <span class="op">*</span><span class="ty">Point</span><span class="op">@</span><span class="ty">R</span>) { p.X += <span class="st">1</span>; }
+<span class="kw">fn</span> <span class="fn">double</span>&lt;<span class="ty">T</span>: <span class="ty">i32</span> | <span class="ty">i64</span>&gt;(x: <span class="ty">T</span>) -> <span class="ty">T</span>   { <span class="kw">return</span> x * <span class="st">2</span>; }</code></pre>
 
   <div class="box warn">
-    <div class="box-title">Missing Constraint = Compile Error</div>
-    <p>If a function performs mutation on a region-polymorphic pointer without the <code>mutable</code> constraint, the compiler rejects it. If a function allocates without the <code>allocable</code> constraint, same result. Constraints are verified at the function definition, not only at call sites.</p>
+    <div class="box-title">Constraint Violation = Compile Error at Definition</div>
+    <p>Constraint violations are caught when the function body is type-checked, not only at call sites. A function that mutates through a region-polymorphic pointer without a <code>Mutable</code>-equivalent constraint will fail at its own definition.</p>
   </div>
 
   <hr>
 
+  <!-- ── 8. METHODS & INTERFACES ── -->
+  <h2 id="methods"><span class="section-num">8</span> Methods</h2>
+  <p>Forge uses a <strong>Go-style receiver syntax</strong> for methods. Methods are declared outside the type definition, attached via a receiver parameter. The receiver is a pointer or value of the type, and its region annotation follows the same rules as any other type annotation (default <code>@stack</code>).</p>
+
+  <pre><code><span class="kw">struct</span> <span class="ty">Point</span> { X: <span class="ty">f32</span>, Y: <span class="ty">f32</span> }
+
+<span class="cm">// Value receiver — gets a copy; cannot mutate original</span>
+<span class="kw">fn</span> (<span class="ty">Point</span>) <span class="fn">length</span>(self) -> <span class="ty">f32</span> {
+    <span class="kw">return</span> sqrt(self.X*self.X + self.Y*self.Y);
+}
+
+<span class="cm">// Pointer receiver — mutates in place</span>
+<span class="kw">fn</span> (<span class="op">*</span><span class="ty">Point</span>) <span class="fn">scale</span>(self, factor: <span class="ty">f32</span>) {
+    self.X *= factor;
+    self.Y *= factor;
+}
+
+<span class="cm">// Explicit region on receiver</span>
+<span class="kw">fn</span> (<span class="op">*</span><span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span>) <span class="fn">move_to_origin</span>(self) {
+    self.X = <span class="st">0.0</span>;
+    self.Y = <span class="st">0.0</span>;
+}</code></pre>
+
+  <h3>Calling Methods</h3>
+  <pre><code><span class="kw">let</span> p: <span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span> = <span class="ty">Point</span>{ .X=<span class="st">3.0</span>, .Y=<span class="st">4.0</span> };
+
+<span class="kw">let</span> len = p.<span class="fn">length</span>();    <span class="cm">// value receiver — copy made</span>
+p.<span class="fn">scale</span>(<span class="st">2.0</span>);            <span class="cm">// pointer receiver — p mutated in place</span>
+                          <span class="cm">// compiler auto-takes &p when receiver is *T</span></code></pre>
+
+  <div class="box note">
+    <div class="box-title">Auto-Reference Rule</div>
+    <p>When calling a pointer-receiver method on a non-pointer value, the compiler automatically takes a reference. The caller never needs to write <code>&amp;p.scale(...)</code>. This is consistent with Go's behavior.</p>
+  </div>
+
+  <h3>Region-Polymorphic Receivers</h3>
+  <p>A method can be generic over the receiver's region:</p>
+  <pre><code><span class="kw">fn</span> (<span class="op">*</span><span class="ty">Point</span><span class="op">@</span><span class="ty">R</span>) <span class="fn">translate</span>&lt;<span class="ty">R</span>: <span class="ty">Mutable</span>&gt;(self, dx: <span class="ty">f32</span>, dy: <span class="ty">f32</span>) {
+    self.X += dx;
+    self.Y += dy;
+}
+<span class="cm">// Works on Point@heap, Point@stack, Point@tls — but not Point@static</span></code></pre>
+
+  <!-- ── INTERFACES ── -->
+  <h2 id="interfaces"><span class="section-num">8.1</span> Interfaces</h2>
+  <p>Interfaces are declared as named sets of method signatures. Any type that implements all methods of an interface <strong>implicitly satisfies</strong> it — no <code>implements</code> keyword or explicit registration required. This is identical to Go's structural typing.</p>
+
+  <pre><code><span class="kw">interface</span> <span class="ty">Shape</span> {
+    <span class="kw">fn</span> <span class="fn">area</span>(self) -> <span class="ty">f32</span>;
+    <span class="kw">fn</span> <span class="fn">perimeter</span>(self) -> <span class="ty">f32</span>;
+}
+
+<span class="kw">interface</span> <span class="ty">Stringer</span> {
+    <span class="kw">fn</span> <span class="fn">to_string</span>(self) -> <span class="ty">str</span>;
+}
+
+<span class="cm">// Point satisfies Shape if both methods are defined on it</span>
+<span class="kw">struct</span> <span class="ty">Circle</span> { radius: <span class="ty">f32</span> }
+
+<span class="kw">fn</span> (<span class="ty">Circle</span>) <span class="fn">area</span>(self) -> <span class="ty">f32</span>      { <span class="kw">return</span> <span class="st">3.14159</span> * self.radius * self.radius; }
+<span class="kw">fn</span> (<span class="ty">Circle</span>) <span class="fn">perimeter</span>(self) -> <span class="ty">f32</span> { <span class="kw">return</span> <span class="st">2.0</span> * <span class="st">3.14159</span> * self.radius; }
+<span class="cm">// Circle now implicitly satisfies Shape — no declaration needed</span></code></pre>
+
+  <h3>Using Interfaces as Types</h3>
+  <pre><code><span class="kw">fn</span> <span class="fn">print_area</span>(s: <span class="ty">Shape</span>) {
+    print(s.<span class="fn">area</span>());
+}
+
+<span class="kw">let</span> c = <span class="ty">Circle</span>{ .radius=<span class="st">5.0</span> };
+<span class="fn">print_area</span>(c);   <span class="cm">// ✓ Circle satisfies Shape</span></code></pre>
+
+  <h3>Interfaces as Type Constraints</h3>
+  <p>Interfaces can be used directly as type constraints, giving compile-time (monomorphized) dispatch rather than dynamic dispatch:</p>
+  <pre><code><span class="cm">// Static dispatch — T must satisfy Shape at compile time</span>
+<span class="kw">fn</span> <span class="fn">largest_area</span>&lt;<span class="ty">T</span>: <span class="ty">Shape</span>&gt;(items: [<span class="ty">T</span>]) -> <span class="ty">f32</span> {
+    <span class="kw">let</span> max: <span class="ty">f32</span> = <span class="st">0.0</span>;
+    <span class="kw">for</span> item <span class="kw">in</span> items { <span class="kw">if</span> item.<span class="fn">area</span>() > max { max = item.<span class="fn">area</span>(); } }
+    <span class="kw">return</span> max;
+}
+
+<span class="cm">// Dynamic dispatch — interface value, resolved at runtime</span>
+<span class="kw">fn</span> <span class="fn">print_any_area</span>(s: <span class="ty">Shape</span>) { print(s.<span class="fn">area</span>()); }</code></pre>
+
+  <h2 id="receiver-regions"><span class="section-num">8.2</span> Receiver Regions &amp; Interface Satisfaction</h2>
+  <p>An interface method signature may include a region annotation on the receiver. If it does, only types whose receiver method matches that region satisfy the interface. If the interface omits the region, any region satisfies it.</p>
+
+  <pre><code><span class="kw">interface</span> <span class="ty">HeapMutator</span> {
+    <span class="kw">fn</span> <span class="fn">reset</span>(<span class="op">*</span>self<span class="op">@</span><span class="reg">heap</span>);   <span class="cm">// receiver must be heap-pointer specifically</span>
+}
+
+<span class="kw">interface</span> <span class="ty">AnyMutator</span> {
+    <span class="kw">fn</span> <span class="fn">reset</span>(<span class="op">*</span>self);         <span class="cm">// any region satisfies this</span>
+}</code></pre>
+
+  <hr>
+
   <!-- ── 6. LIFETIME RULES ── -->
-  <h2 id="lifetime-rules"><span class="section-num">6</span> Formal Lifetime Rules</h2>
+  <h2 id="lifetime-rules"><span class="section-num">10</span> Formal Lifetime Rules</h2>
 
   <div class="box rule">
     <div class="box-title">Join-Point Lifetime Rule</div>
     <p>An alias <code>a</code> is live from its point of creation to its <strong>join point</strong> — the earliest program point that all control-flow paths from <code>a</code>'s creation converge on, after which <code>a</code> is no longer used on any path. At and after the join point, <code>a</code> is dead and a new alias to the same value is permitted.</p>
   </div>
 
-  <h2 id="conditionals"><span class="section-num">6.1</span> Conditionals</h2>
+  <h2 id="conditionals"><span class="section-num">10.1</span> Conditionals</h2>
   <p>The join point of an <code>if/else</code> is the first instruction after the entire <code>if</code> block. If an alias is used on <em>any</em> branch, it remains live until after the full block exits.</p>
 
   <div class="two-col">
@@ -460,7 +607,7 @@ print(p1.X);  <span class="cm">// ✓ allowed: `b` is dead after the inc call ab
 // it is live until all paths have exited)</span>
 <span class="kw">let</span> b = &amp;p1;          <span class="cm">// ✓ allowed</span></code></pre>
 
-  <h2 id="lifetime-rules">6.2 Loops</h2>
+  <h2 id="loops"><span class="section-num">10.2</span> Loops</h2>
   <p>If an alias is used anywhere inside a loop body, it remains live for the <strong>entire loop duration</strong>. A new alias to the same value cannot be created inside the loop body if the original is still live.</p>
 
   <div class="two-col">
@@ -487,7 +634,7 @@ print(p1.X);  <span class="cm">// ✓ allowed: `b` is dead after the inc call ab
   <hr>
 
   <!-- ── 7. CONDITIONAL MOVES ── -->
-  <h2 id="condmove"><span class="section-num">7</span> Conditional Move Semantics</h2>
+  <h2 id="condmove"><span class="section-num">11</span> Conditional Move Semantics</h2>
   <p>A <strong>conditional move</strong> occurs when ownership of a value is transferred on only one control-flow path. After the branch, the compiler cannot statically guarantee whether the value is still valid.</p>
 
   <div class="box rule">
@@ -528,7 +675,7 @@ print(p1.X);  <span class="cm">// ✓ allowed: `b` is dead after the inc call ab
   <hr>
 
   <!-- ── 8. CONCURRENCY ── -->
-  <h2 id="shared"><span class="section-num">8</span> Shared Regions &amp; Concurrency</h2>
+  <h2 id="shared"><span class="section-num">12</span> Shared Regions &amp; Concurrency</h2>
   <p>The <code>shared</code> region is accessible across threads. Immutable access to <code>shared</code> values is always safe and requires no synchronization. <strong>Mutable access requires a lock.</strong></p>
 
   <h2 id="locks">8.1 Value-Level Locking</h2>
@@ -583,7 +730,7 @@ print(config.max_connections);</code></pre>
   <hr>
 
   <!-- ── 9. DESTRUCTION ── -->
-  <h2 id="destruction"><span class="section-num">9</span> Destruction &amp; RAII Hooks</h2>
+  <h2 id="destruction"><span class="section-num">13</span> Destruction &amp; RAII Hooks</h2>
   <p>Values are destroyed either <strong>explicitly</strong> via <code>destroy</code>, or <strong>implicitly</strong> when their owning region exits scope. Programmers can define a custom drop hook that runs before memory is freed.</p>
 
   <pre><code><span class="cm">// Explicit destruction</span>
@@ -610,7 +757,7 @@ destroy p;  <span class="cm">// drop hook runs, then memory freed</span>
   <hr>
 
   <!-- ── 10. UNSAFE ── -->
-  <h2 id="unsafe"><span class="section-num">10</span> Unsafe Blocks</h2>
+  <h2 id="unsafe"><span class="section-num">14</span> Unsafe Blocks</h2>
   <p>The <code>unsafe { ... }</code> block explicitly opts out of Forge's alias and move checking within that block. It is intended for FFI, hand-written allocators, and other cases where the programmer can prove safety by means outside the type system.</p>
 
   <pre><code><span class="kw">unsafe</span> {
@@ -628,46 +775,69 @@ destroy p;  <span class="cm">// drop hook runs, then memory freed</span>
   <hr>
 
   <!-- ── 11. GRAMMAR ── -->
-  <h2 id="grammar"><span class="section-num">11</span> Grammar Quick Reference</h2>
+  <h2 id="grammar"><span class="section-num">15</span> Grammar Quick Reference</h2>
 
   <h3>Type Syntax</h3>
   <div class="grammar">
-<span class="nt">type</span>      ::= <span class="nt">base_type</span> (<span class="lit">"@"</span> <span class="nt">region</span>)<span class="opt">?</span>
-<span class="nt">base_type</span> ::= <span class="nt">ident</span> | <span class="lit">"*"</span> <span class="nt">base_type</span> | <span class="lit">"*const"</span> <span class="nt">base_type</span>
-              | <span class="lit">"["</span> <span class="nt">type</span> <span class="lit">"]"</span> | <span class="lit">"Mutex&lt;"</span> <span class="nt">type</span> <span class="lit">"&gt;"</span>
-<span class="nt">region</span>    ::= <span class="lit">"heap"</span> | <span class="lit">"stack"</span> | <span class="lit">"static"</span> | <span class="lit">"tls"</span> | <span class="lit">"shared"</span> | <span class="nt">ident</span>
+type      ::= base_type ("@" region)?   -- region defaults to stack
+base_type ::= ident | "*" base_type | "*const" base_type | "[" type "]" | "Mutex<" type ">"
+region    ::= "heap" | "stack" | "static" | "tls" | "shared" | ident
+  </div>
+
+  <h3>Constraint Declarations</h3>
+  <div class="grammar">
+constraint_decl ::= "constraint" ident "=" constraint_rhs ";"
+constraint_rhs  ::= constraint_item ("|" constraint_item)*
+constraint_item ::= region           -- region constraint (cannot mix with type below)
+                  | type_ident       -- type constraint
+                  | interface_ident  -- type constraint
+  </div>
+
+  <h3>Method and Interface Syntax</h3>
+  <div class="grammar">
+method_decl  ::= "fn" "(" receiver ")" ident ("<" type_params ">")?  "(" params ")" ("->" type)? block
+receiver     ::= type | "*" type | "*const" type
+iface_decl   ::= "interface" ident "{" iface_method* "}"
+iface_method ::= "fn" ident "(" receiver_sig ("," params)? ")" ("->" type)? ";"
   </div>
 
   <h3>Function Syntax</h3>
   <div class="grammar">
-<span class="nt">fn_decl</span>   ::= <span class="lit">"fn"</span> <span class="nt">ident</span> (<span class="lit">"&lt;"</span> <span class="nt">type_params</span> <span class="lit">"&gt;"</span>)<span class="opt">?</span> <span class="lit">"("</span> <span class="nt">params</span> <span class="lit">")"</span> (<span class="lit">"->"</span> <span class="nt">type</span>)<span class="opt">?</span> <span class="nt">block</span>
-<span class="nt">type_params</span>::= <span class="nt">type_param</span> (<span class="lit">","</span> <span class="nt">type_param</span>)<span class="opt">*</span>
-<span class="nt">type_param</span>::= <span class="nt">ident</span> (<span class="lit">":"</span> <span class="nt">region_constraint</span>)<span class="opt">?</span>
-<span class="nt">region_constraint</span> ::= <span class="nt">constraint</span> (<span class="lit">"|"</span> <span class="nt">constraint</span>)<span class="opt">*</span>
-<span class="nt">constraint</span>::= <span class="lit">"allocable"</span> | <span class="lit">"mutable"</span> | <span class="lit">"thread_safe"</span> | <span class="nt">region</span>
+fn_decl    ::= "fn" ident ("<" type_params ">")?  "(" params ")" ("->" type)? block
+type_params::= type_param ("," type_param)*
+type_param ::= ident (":" constraint_ref)?
+constraint_ref ::= ident | region ("|" region)* | type_ident ("|" type_ident)*
   </div>
 
   <h3>Statement Syntax</h3>
   <div class="grammar">
-<span class="nt">let_stmt</span>   ::= <span class="lit">"let"</span> <span class="nt">ident</span> (<span class="lit">":"</span> <span class="nt">type</span>)<span class="opt">?</span> <span class="lit">"="</span> <span class="nt">expr</span> <span class="lit">";"</span>
-<span class="nt">destroy</span>    ::= <span class="lit">"destroy"</span> <span class="nt">ident</span> <span class="lit">";"</span>
-<span class="nt">lock_stmt</span>  ::= <span class="lit">"lock"</span> <span class="lit">"("</span> <span class="nt">expr</span> <span class="lit">")"</span> <span class="lit">"|"</span> <span class="nt">ident</span> <span class="lit">"|"</span> <span class="nt">block</span>
-<span class="nt">spawn_stmt</span> ::= <span class="lit">"spawn"</span> <span class="nt">block</span>
-<span class="nt">unsafe_blk</span> ::= <span class="lit">"unsafe"</span> <span class="nt">block</span>
-<span class="nt">region_decl</span>::= <span class="lit">"region"</span> <span class="nt">ident</span> (<span class="lit">":"</span> <span class="nt">region</span>)<span class="opt">?</span> <span class="lit">";"</span>
+let_stmt    ::= "let" ident (":" type)? "=" expr ";"
+destroy     ::= "destroy" ident ";"
+lock_stmt   ::= "lock" "(" expr ")" "|" ident "|" block
+spawn_stmt  ::= "spawn" block
+unsafe_blk  ::= "unsafe" block
+region_decl ::= "region" ident (":" region)? ";"
   </div>
 
   <hr>
 
   <!-- ── SUMMARY ── -->
-  <h2><span class="section-num">12</span> Summary</h2>
+  <h2><span class="section-num">16</span> Summary</h2>
 
   <table>
     <tr><th>Concept</th><th>Syntax</th><th>Guarantee</th></tr>
+    <tr><td>Default region</td><td><code>T</code> (no annotation)</td><td>Treated as <code>T@stack</code>; explicit overrides with <code>@R</code></td></tr>
     <tr><td>Owned value in region R</td><td><code>T@R</code></td><td>Exclusive ownership; move invalidates aliases</td></tr>
     <tr><td>Mutable borrow</td><td><code>*T@R</code></td><td>Exclusive; last-use tracked by compiler</td></tr>
     <tr><td>Immutable borrow</td><td><code>*const T@R</code></td><td>Shared; coexists with other immutable borrows</td></tr>
-    <tr><td>Region polymorphism</td><td><code>&lt;T, R: constraint&gt;</code></td><td>Safe across regions; constrained at definition</td></tr>
+    <tr><td>Region constraint</td><td><code>constraint C = r1 | r2</code></td><td>Region-only; compile error if applied to type param</td></tr>
+    <tr><td>Type constraint</td><td><code>constraint C = T1 | T2</code></td><td>Type-only; compile error if applied to region param</td></tr>
+    <tr><td>Region polymorphism</td><td><code>&lt;T, R: RegionConstraint&gt;</code></td><td>Safe across regions; constrained at definition</td></tr>
+    <tr><td>Type polymorphism</td><td><code>&lt;T: TypeConstraint&gt;</code></td><td>Monomorphized; interface-constrained generics</td></tr>
+    <tr><td>Methods</td><td><code>fn (T) name(self)</code> / <code>fn (*T) name(self)</code></td><td>Go-style receiver; auto-reference for pointer receivers</td></tr>
+    <tr><td>Interfaces</td><td><code>interface I { fn m(self) }</code></td><td>Implicit satisfaction; structural typing</td></tr>
+    <tr><td>Static dispatch</td><td><code>fn f&lt;T: Interface&gt;(...)</code></td><td>Monomorphized at compile time</td></tr>
+    <tr><td>Dynamic dispatch</td><td><code>fn f(x: Interface)</code></td><td>vtable; runtime resolution</td></tr>
     <tr><td>Sequential aliases</td><td>RAII last-use</td><td>No explicit scoping needed for safe sequential mutation</td></tr>
     <tr><td>Conditional move</td><td>Reinit or <code>is_valid</code></td><td>Compiler rejects unhandled possibly-moved values</td></tr>
     <tr><td>Shared mutation</td><td><code>Mutex&lt;T&gt;@shared</code> + <code>lock</code></td><td>Value-level locking; data race free at compile time</td></tr>
