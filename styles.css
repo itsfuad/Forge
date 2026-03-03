@@ -1,0 +1,273 @@
+/* ══════════════════════════════════════════
+   Forge Language Website — Shared Styles
+══════════════════════════════════════════ */
+
+/* ── CSS Variables ── */
+:root {
+  --bg:       #0f1117;
+  --surface:  #181c27;
+  --surface2: #1e2333;
+  --border:   #2a3050;
+  --accent:   #5b8ef0;
+  --accent2:  #a78bfa;
+  --green:    #4ade80;
+  --red:      #f87171;
+  --yellow:   #fbbf24;
+  --text:     #e2e8f0;
+  --muted:    #8892a4;
+  --code-bg:  #12151f;
+  --orange:   #fb923c;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  font-size: 15px;
+}
+
+/* ── Typography ── */
+h1 { font-size: 2.2rem; font-weight: 800; color: var(--accent); margin-bottom: .4rem; }
+h2 { font-size: 1.4rem; font-weight: 700; color: var(--text); margin: 3rem 0 1rem; padding-bottom: .5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; font-weight: 600; color: var(--accent2); margin: 2rem 0 .6rem; }
+p  { margin-bottom: .85rem; }
+ul, ol { margin: .4rem 0 .9rem 1.5rem; }
+li { margin-bottom: .3rem; }
+strong { color: #fff; }
+hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+
+/* ── Inline code ── */
+p code, li code, td code {
+  background: var(--surface2);
+  padding: .12rem .38rem;
+  border-radius: 4px;
+  font-size: .84em;
+  color: #c9d1d9;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+}
+
+/* ── Code blocks ── */
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.1rem 1.4rem;
+  overflow-x: auto;
+  margin: .8rem 0 1.4rem;
+  font-size: .875rem;
+  line-height: 1.65;
+}
+code {
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  color: #c9d1d9;
+}
+pre code { color: inherit; }
+
+/* ── Syntax highlighting ── */
+.kw  { color: #a78bfa; font-weight: 600; }
+.ty  { color: #67e8f9; }
+.fn  { color: #86efac; }
+.cm  { color: #6b7280; font-style: italic; }
+.st  { color: #fbbf24; }
+.op  { color: #f9a8d4; }
+.reg { color: #fb923c; }
+.err { color: #f87171; }
+.nm  { color: #f9a8d4; }
+.bi  { color: #7dd3fc; }
+.tok  { color: var(--green);  font-weight: 700; }
+.tno  { color: var(--red);    font-weight: 700; }
+.tcond{ color: var(--yellow); font-weight: 700; }
+
+/* ── Tables ── */
+table { width: 100%; border-collapse: collapse; margin: .8rem 0 1.4rem; font-size: .875rem; }
+th { background: var(--surface2); color: var(--accent); font-weight: 600; padding: .55rem .9rem; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: .5rem .9rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:hover td { background: var(--surface2); }
+
+/* ── Info boxes ── */
+.box { border-radius: 8px; padding: .9rem 1.2rem; margin: 1.1rem 0; border-left: 3px solid; }
+.box.rule { background: #0d1f3c; border-color: var(--accent); }
+.box.warn { background: #1f1200; border-color: var(--yellow); }
+.box.note { background: #1a1425; border-color: var(--accent2); }
+.box p:last-child { margin-bottom: 0; }
+.bt { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-bottom: .35rem; }
+.box.rule .bt { color: var(--accent); }
+.box.warn .bt { color: var(--yellow); }
+.box.note .bt { color: var(--accent2); }
+
+/* ── Two-column code grid ── */
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: .8rem 0; }
+.two pre { margin: 0; }
+.lbl { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: .3rem; }
+.lbl.ok  { color: var(--green); }
+.lbl.err { color: var(--red); }
+
+/* ══════════════════════════════
+   SPEC PAGE  (index.html)
+══════════════════════════════ */
+
+/* hamburger toggle — hidden on wide screens */
+.nav-toggle {
+  display: none;
+  position: fixed;
+  top: .85rem;
+  left: .85rem;
+  z-index: 200;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .45rem .65rem;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 1.15rem;
+  line-height: 1;
+}
+/* semi-transparent overlay behind open sidebar on mobile */
+.nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .5);
+  z-index: 90;
+}
+.nav-overlay.open { display: block; }
+
+.layout { display: flex; min-height: 100vh; }
+
+nav {
+  width: 272px;
+  min-width: 272px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 2rem 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  transition: transform .25s;
+}
+nav .logo { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+nav .logo h1 { font-size: 1.25rem; font-weight: 700; color: var(--accent); letter-spacing: .05em; }
+nav .logo span { font-size: .75rem; color: var(--muted); }
+nav a { display: block; padding: .3rem 1.5rem; color: var(--muted); text-decoration: none; font-size: .83rem; transition: color .15s; }
+nav a:hover { color: var(--text); }
+nav a.hd { color: var(--muted); font-weight: 600; font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; padding-top: 1.2rem; cursor: default; }
+nav a.sub { padding-left: 2.25rem; }
+nav a.ext { color: var(--accent); }
+nav a.ext:hover { color: #fff; }
+
+main {
+  flex: 1;
+  padding: 3rem 4rem;
+  max-width: 920px;
+}
+
+.subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 1.75rem; }
+.vbar { display: inline-flex; gap: 1.5rem; align-items: center; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: .5rem 1rem; margin-bottom: 2.5rem; font-size: .8rem; color: var(--muted); flex-wrap: wrap; }
+.vbar span strong { color: var(--accent); }
+.sn { display: inline-block; background: var(--accent); color: #0f1117; font-size: .68rem; font-weight: 800; padding: .08rem .42rem; border-radius: 4px; margin-right: .45rem; vertical-align: middle; }
+.sn.ec { background: var(--red); }
+.grammar { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem 1.4rem; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: .83rem; line-height: 1.85; color: #c9d1d9; white-space: pre; overflow-x: auto; }
+
+/* ══════════════════════════════
+   EXAMPLES PAGE  (examples.html)
+══════════════════════════════ */
+
+.page { max-width: 860px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: .85rem;
+  margin-bottom: 1.5rem;
+  transition: color .15s;
+}
+.back-link:hover { color: var(--text); }
+
+.header { margin-bottom: 3rem; }
+.header h1 { font-size: 2rem; font-weight: 800; color: var(--accent); letter-spacing: .02em; }
+/* override shared h2 margin inside examples header */
+.ex-header h2 { font-size: 1.3rem; margin: 0 0 .3rem; padding-bottom: 0; border-bottom: none; }
+.header p { color: var(--muted); margin-top: .35rem; }
+.badge { display: inline-block; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: .15rem .6rem; font-size: .75rem; color: var(--muted); margin-right: .4rem; margin-top: .5rem; }
+
+.tabs { display: flex; gap: .5rem; margin-bottom: 2.5rem; flex-wrap: wrap; }
+.tab { padding: .45rem 1.1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; font-size: .85rem; font-weight: 500; transition: all .15s; user-select: none; font-family: inherit; line-height: inherit; }
+.tab:hover { border-color: var(--accent); color: var(--text); }
+.tab.active { background: var(--accent); color: #0f1117; border-color: var(--accent); font-weight: 700; }
+
+.example { display: none; }
+.example.active { display: block; }
+
+.ex-header { margin-bottom: 1.5rem; }
+.ex-header p { color: var(--muted); font-size: .9rem; max-width: 620px; margin-bottom: 0; }
+
+.code-wrap { position: relative; margin-bottom: 1.5rem; }
+.code-label { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: .4rem; }
+
+.callouts { display: flex; flex-direction: column; gap: .6rem; margin-bottom: 2rem; }
+.callout { display: flex; gap: .75rem; align-items: flex-start; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: .7rem 1rem; font-size: .84rem; }
+.callout .icon { font-size: 1rem; margin-top: .05rem; flex-shrink: 0; }
+.callout strong { color: var(--text); }
+.callout span { color: var(--muted); }
+
+.output { background: #0a0e15; border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.4rem; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: .84rem; color: var(--green); margin-bottom: 1.5rem; }
+.output-label { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: .4rem; }
+.output .prompt { color: var(--muted); }
+.divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+/* ══════════════════════════════
+   RESPONSIVE BREAKPOINTS
+══════════════════════════════ */
+
+/* ── Tablet / narrow desktop: slide-in sidebar ── */
+@media (max-width: 900px) {
+  main { padding: 2.5rem 2rem; }
+}
+
+@media (max-width: 768px) {
+  /* show hamburger button */
+  .nav-toggle { display: flex; align-items: center; justify-content: center; }
+
+  /* sidebar slides off-screen */
+  nav {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    transform: translateX(-100%);
+    height: 100vh;
+  }
+  nav.open { transform: translateX(0); }
+
+  /* main takes full width, offset top for hamburger button */
+  main { padding: 1.5rem 1.25rem; max-width: 100%; padding-top: 3.5rem; }
+
+  h1 { font-size: 1.65rem; }
+  h2 { font-size: 1.2rem; margin: 2rem 0 .75rem; }
+
+  .grammar { font-size: .78rem; }
+}
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  /* stack two-column code grids */
+  .two { grid-template-columns: 1fr; }
+
+  pre { padding: .85rem 1rem; font-size: .82rem; }
+  table { font-size: .8rem; }
+  th, td { padding: .4rem .6rem; }
+
+  /* examples page */
+  .page { padding: 1.5rem 1rem 3rem; }
+  .tabs { gap: .35rem; }
+  .tab { padding: .38rem .75rem; font-size: .8rem; }
+  .header h1 { font-size: 1.6rem; }
+}

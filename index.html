@@ -4,66 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Forge Language — Core Design Specification</title>
-<style>
-  :root {
-    --bg:#0f1117;--surface:#181c27;--surface2:#1e2333;--border:#2a3050;
-    --accent:#5b8ef0;--accent2:#a78bfa;--green:#4ade80;--red:#f87171;
-    --yellow:#fbbf24;--text:#e2e8f0;--muted:#8892a4;--code-bg:#12151f;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.75;font-size:15px}
-  .layout{display:flex;min-height:100vh}
-  nav{width:272px;min-width:272px;background:var(--surface);border-right:1px solid var(--border);padding:2rem 0;position:sticky;top:0;height:100vh;overflow-y:auto}
-  nav .logo{padding:0 1.5rem 1.5rem;border-bottom:1px solid var(--border);margin-bottom:1rem}
-  nav .logo h1{font-size:1.25rem;font-weight:700;color:var(--accent);letter-spacing:.05em}
-  nav .logo span{font-size:.75rem;color:var(--muted)}
-  nav a{display:block;padding:.3rem 1.5rem;color:var(--muted);text-decoration:none;font-size:.83rem;transition:color .15s}
-  nav a:hover{color:var(--text)}
-  nav a.hd{color:var(--muted);font-weight:600;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;padding-top:1.2rem;cursor:default}
-  nav a.sub{padding-left:2.25rem}
-  main{flex:1;padding:3rem 4rem;max-width:920px}
-  h1{font-size:2.2rem;font-weight:800;color:var(--accent);margin-bottom:.4rem}
-  h2{font-size:1.4rem;font-weight:700;color:var(--text);margin:3rem 0 1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
-  h3{font-size:1.05rem;font-weight:600;color:var(--accent2);margin:2rem 0 .6rem}
-  p{margin-bottom:.85rem}
-  ul,ol{margin:.4rem 0 .9rem 1.5rem}
-  li{margin-bottom:.3rem}
-  strong{color:#fff}
-  .subtitle{color:var(--muted);font-size:1rem;margin-bottom:1.75rem}
-  .vbar{display:inline-flex;gap:1.5rem;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.5rem 1rem;margin-bottom:2.5rem;font-size:.8rem;color:var(--muted)}
-  .vbar span strong{color:var(--accent)}
-  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.1rem 1.4rem;overflow-x:auto;margin:.8rem 0 1.4rem;font-size:.875rem;line-height:1.65}
-  code{font-family:'Cascadia Code','Fira Code','Consolas',monospace;color:#c9d1d9}
-  pre code{color:inherit}
-  p code,li code,td code{background:var(--surface2);padding:.12rem .38rem;border-radius:4px;font-size:.84em;color:#c9d1d9;font-family:'Cascadia Code','Fira Code','Consolas',monospace}
-  .kw{color:#a78bfa;font-weight:600}.ty{color:#67e8f9}.fn{color:#86efac}
-  .cm{color:#6b7280;font-style:italic}.st{color:#fbbf24}.op{color:#f9a8d4}
-  .reg{color:#fb923c}.err{color:#f87171}
-  .box{border-radius:8px;padding:.9rem 1.2rem;margin:1.1rem 0;border-left:3px solid}
-  .box.rule{background:#0d1f3c;border-color:var(--accent)}
-  .box.warn{background:#1f1200;border-color:var(--yellow)}
-  .box.note{background:#1a1425;border-color:var(--accent2)}
-  .box p:last-child{margin-bottom:0}
-  .bt{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.35rem}
-  .box.rule .bt{color:var(--accent)}.box.warn .bt{color:var(--yellow)}.box.note .bt{color:var(--accent2)}
-  table{width:100%;border-collapse:collapse;margin:.8rem 0 1.4rem;font-size:.875rem}
-  th{background:var(--surface2);color:var(--accent);font-weight:600;padding:.55rem .9rem;text-align:left;border-bottom:2px solid var(--border)}
-  td{padding:.5rem .9rem;border-bottom:1px solid var(--border);vertical-align:top}
-  tr:hover td{background:var(--surface2)}
-  .sn{display:inline-block;background:var(--accent);color:#0f1117;font-size:.68rem;font-weight:800;padding:.08rem .42rem;border-radius:4px;margin-right:.45rem;vertical-align:middle}
-  .sn.ec{background:var(--red)}
-  .two{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:.8rem 0}
-  .two pre{margin:0}
-  .lbl{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem}
-  .lbl.ok{color:var(--green)}.lbl.err{color:var(--red)}
-  .grammar{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.1rem 1.4rem;font-family:'Cascadia Code','Fira Code',monospace;font-size:.83rem;line-height:1.85;color:#c9d1d9;white-space:pre;overflow-x:auto}
-  hr{border:none;border-top:1px solid var(--border);margin:2.5rem 0}
-  .tok{color:var(--green);font-weight:700}.tno{color:var(--red);font-weight:700}.tcond{color:var(--yellow);font-weight:700}
-</style>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">&#9776;</button>
+<div class="nav-overlay" id="navOverlay"></div>
 <div class="layout">
-<nav>
+<nav id="sidebar">
   <div class="logo"><h1>&#9874; FORGE</h1><span>Language Specification v0.2</span></div>
   <a class="hd">Overview</a>
   <a class="sub" href="#intro">Introduction</a>
@@ -98,6 +45,8 @@
   <a class="sub" href="#unsafe">Unsafe Blocks</a>
   <a class="sub" href="#grammar">Grammar Reference</a>
   <a class="sub" href="#summary">Summary Table</a>
+  <a class="hd">Pages</a>
+  <a class="sub ext" href="examples.html">&#187; Example Programs</a>
 </nav>
 
 <main>
@@ -519,5 +468,24 @@ region_decl    ::= "region" ident (":" region)? ";"</div>
 </table>
 </main>
 </div>
+<script>
+  (function () {
+    var toggle = document.getElementById('navToggle');
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('navOverlay');
+    function openNav()  { sidebar.classList.add('open');  overlay.classList.add('open'); }
+    function closeNav() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
+    toggle.addEventListener('click', function () {
+      sidebar.classList.contains('open') ? closeNav() : openNav();
+    });
+    overlay.addEventListener('click', closeNav);
+    /* close sidebar when a nav link is clicked on mobile */
+    sidebar.querySelectorAll('a[href]').forEach(function (a) {
+      a.addEventListener('click', function () {
+        if (window.innerWidth <= 768) closeNav();
+      });
+    });
+  })();
+</script>
 </body>
 </html>
