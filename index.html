@@ -6,846 +6,517 @@
 <title>Forge Language — Core Design Specification</title>
 <style>
   :root {
-    --bg: #0f1117;
-    --surface: #181c27;
-    --surface2: #1e2333;
-    --border: #2a3050;
-    --accent: #5b8ef0;
-    --accent2: #a78bfa;
-    --green: #4ade80;
-    --red: #f87171;
-    --yellow: #fbbf24;
-    --text: #e2e8f0;
-    --muted: #8892a4;
-    --code-bg: #12151f;
+    --bg:#0f1117;--surface:#181c27;--surface2:#1e2333;--border:#2a3050;
+    --accent:#5b8ef0;--accent2:#a78bfa;--green:#4ade80;--red:#f87171;
+    --yellow:#fbbf24;--text:#e2e8f0;--muted:#8892a4;--code-bg:#12151f;
   }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.75;
-    font-size: 15px;
-  }
-
-  /* ── Layout ── */
-  .layout { display: flex; min-height: 100vh; }
-
-  nav {
-    width: 260px;
-    min-width: 260px;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    padding: 2rem 0;
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    overflow-y: auto;
-  }
-
-  nav .logo {
-    padding: 0 1.5rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 1rem;
-  }
-  nav .logo h1 { font-size: 1.25rem; font-weight: 700; color: var(--accent); letter-spacing: 0.05em; }
-  nav .logo span { font-size: 0.75rem; color: var(--muted); }
-
-  nav a {
-    display: block;
-    padding: 0.35rem 1.5rem;
-    color: var(--muted);
-    text-decoration: none;
-    font-size: 0.85rem;
-    transition: color 0.15s;
-  }
-  nav a:hover { color: var(--text); }
-  nav a.section-title {
-    color: var(--text);
-    font-weight: 600;
-    font-size: 0.8rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding-top: 1.25rem;
-    color: var(--muted);
-    cursor: default;
-  }
-  nav a.sub { padding-left: 2.25rem; }
-
-  main {
-    flex: 1;
-    padding: 3rem 4rem;
-    max-width: 900px;
-  }
-
-  /* ── Typography ── */
-  h1 { font-size: 2.2rem; font-weight: 800; color: var(--accent); margin-bottom: 0.4rem; }
-  h2 { font-size: 1.45rem; font-weight: 700; color: var(--text); margin: 3rem 0 1rem;
-       padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
-  h3 { font-size: 1.1rem; font-weight: 600; color: var(--accent2); margin: 2rem 0 0.75rem; }
-  h4 { font-size: 0.95rem; font-weight: 600; color: var(--yellow); margin: 1.5rem 0 0.5rem; }
-  p  { margin-bottom: 0.9rem; color: var(--text); }
-  ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
-  li { margin-bottom: 0.35rem; }
-  strong { color: #fff; }
-
-  .subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 2rem; }
-  .version-bar {
-    display: inline-flex; gap: 1.5rem; align-items: center;
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 8px; padding: 0.5rem 1rem; margin-bottom: 2.5rem;
-    font-size: 0.8rem; color: var(--muted);
-  }
-  .version-bar span strong { color: var(--accent); }
-
-  /* ── Code ── */
-  pre {
-    background: var(--code-bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1.25rem 1.5rem;
-    overflow-x: auto;
-    margin: 1rem 0 1.5rem;
-    font-size: 0.875rem;
-    line-height: 1.6;
-  }
-  code {
-    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-    color: #c9d1d9;
-  }
-  pre code { color: inherit; }
-
-  /* Syntax highlighting via spans */
-  .kw  { color: #a78bfa; font-weight: 600; }  /* keywords */
-  .ty  { color: #67e8f9; }                     /* types */
-  .fn  { color: #86efac; }                     /* function names */
-  .cm  { color: #6b7280; font-style: italic; } /* comments */
-  .st  { color: #fbbf24; }                     /* strings / values */
-  .op  { color: #f9a8d4; }                     /* operators */
-  .reg { color: #fb923c; }                     /* regions */
-  .err { color: #f87171; }                     /* errors */
-  .ok  { color: #4ade80; }                     /* ok markers */
-
-  /* ── Callout boxes ── */
-  .box {
-    border-radius: 8px;
-    padding: 1rem 1.25rem;
-    margin: 1.25rem 0;
-    border-left: 3px solid;
-  }
-  .box.rule    { background: #0d1f3c; border-color: var(--accent); }
-  .box.warn    { background: #1f1200; border-color: var(--yellow); }
-  .box.error   { background: #1f0d0d; border-color: var(--red); }
-  .box.ok      { background: #0d1f10; border-color: var(--green); }
-  .box.note    { background: #1a1425; border-color: var(--accent2); }
-  .box p:last-child { margin-bottom: 0; }
-  .box-title { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
-               text-transform: uppercase; margin-bottom: 0.4rem; }
-  .box.rule  .box-title { color: var(--accent); }
-  .box.warn  .box-title { color: var(--yellow); }
-  .box.error .box-title { color: var(--red); }
-  .box.ok    .box-title { color: var(--green); }
-  .box.note  .box-title { color: var(--accent2); }
-
-  /* ── Tables ── */
-  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.875rem; }
-  th { background: var(--surface2); color: var(--accent); font-weight: 600;
-       padding: 0.6rem 1rem; text-align: left; border-bottom: 2px solid var(--border); }
-  td { padding: 0.55rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-  tr:hover td { background: var(--surface2); }
-  td code { background: var(--surface2); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.8rem; }
-
-  /* ── Section dividers ── */
-  .section-num {
-    display: inline-block;
-    background: var(--accent);
-    color: #0f1117;
-    font-size: 0.7rem;
-    font-weight: 800;
-    padding: 0.1rem 0.45rem;
-    border-radius: 4px;
-    margin-right: 0.5rem;
-    vertical-align: middle;
-  }
-
-  /* ── Grammar box ── */
-  .grammar {
-    background: var(--code-bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1.25rem 1.5rem;
-    font-family: 'Cascadia Code', 'Fira Code', monospace;
-    font-size: 0.85rem;
-    line-height: 1.8;
-    color: #c9d1d9;
-  }
-  .grammar .nt  { color: var(--accent2); }
-  .grammar .lit { color: var(--yellow); }
-  .grammar .opt { color: var(--muted); }
-
-  /* ── Divider ── */
-  hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
-
-  /* ── inline code ── */
-  p code, li code, td code {
-    background: var(--surface2);
-    padding: 0.15rem 0.4rem;
-    border-radius: 4px;
-    font-size: 0.85em;
-    color: #c9d1d9;
-  }
-
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
-  .two-col pre { margin: 0; }
-  .two-col .label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em;
-                    text-transform: uppercase; margin-bottom: 0.35rem; }
-  .two-col .label.ok  { color: var(--green); }
-  .two-col .label.err { color: var(--red); }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.75;font-size:15px}
+  .layout{display:flex;min-height:100vh}
+  nav{width:272px;min-width:272px;background:var(--surface);border-right:1px solid var(--border);padding:2rem 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+  nav .logo{padding:0 1.5rem 1.5rem;border-bottom:1px solid var(--border);margin-bottom:1rem}
+  nav .logo h1{font-size:1.25rem;font-weight:700;color:var(--accent);letter-spacing:.05em}
+  nav .logo span{font-size:.75rem;color:var(--muted)}
+  nav a{display:block;padding:.3rem 1.5rem;color:var(--muted);text-decoration:none;font-size:.83rem;transition:color .15s}
+  nav a:hover{color:var(--text)}
+  nav a.hd{color:var(--muted);font-weight:600;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;padding-top:1.2rem;cursor:default}
+  nav a.sub{padding-left:2.25rem}
+  main{flex:1;padding:3rem 4rem;max-width:920px}
+  h1{font-size:2.2rem;font-weight:800;color:var(--accent);margin-bottom:.4rem}
+  h2{font-size:1.4rem;font-weight:700;color:var(--text);margin:3rem 0 1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+  h3{font-size:1.05rem;font-weight:600;color:var(--accent2);margin:2rem 0 .6rem}
+  p{margin-bottom:.85rem}
+  ul,ol{margin:.4rem 0 .9rem 1.5rem}
+  li{margin-bottom:.3rem}
+  strong{color:#fff}
+  .subtitle{color:var(--muted);font-size:1rem;margin-bottom:1.75rem}
+  .vbar{display:inline-flex;gap:1.5rem;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.5rem 1rem;margin-bottom:2.5rem;font-size:.8rem;color:var(--muted)}
+  .vbar span strong{color:var(--accent)}
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.1rem 1.4rem;overflow-x:auto;margin:.8rem 0 1.4rem;font-size:.875rem;line-height:1.65}
+  code{font-family:'Cascadia Code','Fira Code','Consolas',monospace;color:#c9d1d9}
+  pre code{color:inherit}
+  p code,li code,td code{background:var(--surface2);padding:.12rem .38rem;border-radius:4px;font-size:.84em;color:#c9d1d9;font-family:'Cascadia Code','Fira Code','Consolas',monospace}
+  .kw{color:#a78bfa;font-weight:600}.ty{color:#67e8f9}.fn{color:#86efac}
+  .cm{color:#6b7280;font-style:italic}.st{color:#fbbf24}.op{color:#f9a8d4}
+  .reg{color:#fb923c}.err{color:#f87171}
+  .box{border-radius:8px;padding:.9rem 1.2rem;margin:1.1rem 0;border-left:3px solid}
+  .box.rule{background:#0d1f3c;border-color:var(--accent)}
+  .box.warn{background:#1f1200;border-color:var(--yellow)}
+  .box.note{background:#1a1425;border-color:var(--accent2)}
+  .box p:last-child{margin-bottom:0}
+  .bt{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.35rem}
+  .box.rule .bt{color:var(--accent)}.box.warn .bt{color:var(--yellow)}.box.note .bt{color:var(--accent2)}
+  table{width:100%;border-collapse:collapse;margin:.8rem 0 1.4rem;font-size:.875rem}
+  th{background:var(--surface2);color:var(--accent);font-weight:600;padding:.55rem .9rem;text-align:left;border-bottom:2px solid var(--border)}
+  td{padding:.5rem .9rem;border-bottom:1px solid var(--border);vertical-align:top}
+  tr:hover td{background:var(--surface2)}
+  .sn{display:inline-block;background:var(--accent);color:#0f1117;font-size:.68rem;font-weight:800;padding:.08rem .42rem;border-radius:4px;margin-right:.45rem;vertical-align:middle}
+  .sn.ec{background:var(--red)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:.8rem 0}
+  .two pre{margin:0}
+  .lbl{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem}
+  .lbl.ok{color:var(--green)}.lbl.err{color:var(--red)}
+  .grammar{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.1rem 1.4rem;font-family:'Cascadia Code','Fira Code',monospace;font-size:.83rem;line-height:1.85;color:#c9d1d9;white-space:pre;overflow-x:auto}
+  hr{border:none;border-top:1px solid var(--border);margin:2.5rem 0}
+  .tok{color:var(--green);font-weight:700}.tno{color:var(--red);font-weight:700}.tcond{color:var(--yellow);font-weight:700}
 </style>
 </head>
 <body>
 <div class="layout">
-
-<!-- ── Sidebar ── -->
 <nav>
-  <div class="logo">
-    <h1>⚒ FORGE</h1>
-    <span>Language Specification v0.1</span>
-  </div>
-  <a class="section-title">Overview</a>
+  <div class="logo"><h1>&#9874; FORGE</h1><span>Language Specification v0.2</span></div>
+  <a class="hd">Overview</a>
   <a class="sub" href="#intro">Introduction</a>
   <a class="sub" href="#philosophy">Design Philosophy</a>
-
-  <a class="section-title">Memory Model</a>
+  <a class="hd">Memory Model</a>
   <a class="sub" href="#regions">Region Types</a>
+  <a class="sub" href="#defaultregion">Default Region</a>
   <a class="sub" href="#pointers">Pointers &amp; Ownership</a>
   <a class="sub" href="#raii">RAII &amp; Aliases</a>
-
-  <a class="section-title">Type System</a>
-  <a class="sub" href="#defaultregion">Default Region</a>
+  <a class="hd">Edge Cases &#9733;</a>
+  <a class="sub" href="#crossregion">EC1: Cross-Region Moves</a>
+  <a class="sub" href="#liveness">EC2: Liveness Analysis</a>
+  <a class="sub" href="#sharedaliasing">EC3: Shared Aliasing Rules</a>
+  <a class="hd">Type System</a>
   <a class="sub" href="#generics">Region Polymorphism</a>
   <a class="sub" href="#constraints">Constraints</a>
-
-  <a class="section-title">Methods &amp; Interfaces</a>
+  <a class="hd">Methods &amp; Interfaces</a>
   <a class="sub" href="#methods">Methods</a>
   <a class="sub" href="#interfaces">Interfaces</a>
   <a class="sub" href="#receiver-regions">Receiver Regions</a>
-
-  <a class="section-title">Lifetimes</a>
+  <a class="hd">Lifetimes</a>
   <a class="sub" href="#lifetime-rules">Formal Lifetime Rules</a>
   <a class="sub" href="#conditionals">Conditionals</a>
   <a class="sub" href="#loops">Loops</a>
   <a class="sub" href="#condmove">Conditional Moves</a>
-
-  <a class="section-title">Concurrency</a>
+  <a class="hd">Concurrency</a>
   <a class="sub" href="#shared">Shared Regions</a>
   <a class="sub" href="#locks">Value-Level Locking</a>
   <a class="sub" href="#parallel">Parallel Safety</a>
-
-  <a class="section-title">Advanced</a>
-  <a class="sub" href="#destruction">Destruction &amp; RAII hooks</a>
+  <a class="hd">Advanced</a>
+  <a class="sub" href="#destruction">Destruction &amp; Drop Hooks</a>
   <a class="sub" href="#unsafe">Unsafe Blocks</a>
   <a class="sub" href="#grammar">Grammar Reference</a>
+  <a class="sub" href="#summary">Summary Table</a>
 </nav>
 
-<!-- ── Main ── -->
 <main>
+<h1>Forge Language</h1>
+<p class="subtitle">Core Design Specification</p>
+<div class="vbar">
+  <span>Version <strong>0.2-draft</strong></span>
+  <span>Status <strong>Design Phase</strong></span>
+  <span>Memory Model <strong>Region-Owned</strong></span>
+</div>
 
-  <!-- HEADER -->
-  <h1>Forge Language</h1>
-  <p class="subtitle">Core Design Specification</p>
-  <div class="version-bar">
-    <span>Version <strong>0.1-draft</strong></span>
-    <span>Status <strong>Design Phase</strong></span>
-    <span>Memory Model <strong>Region-Owned</strong></span>
-  </div>
+<h2 id="intro"><span class="sn">1</span> Introduction</h2>
+<p>Forge is a systems programming language with compile-time memory and concurrency safety through a <strong>region-based ownership model</strong> and RAII-style lifetime tracking. No garbage collector. No explicit lifetime annotation syntax. No borrow-checker gymnastics. Every memory operation has a clear, predictable cost.</p>
+<h3 id="philosophy">Design Philosophy</h3>
+<ul>
+  <li><strong>Safety by default.</strong> Memory errors, data races, and use-after-free are compile-time errors.</li>
+  <li><strong>Minimal annotation.</strong> Lifetimes are inferred. Region parameters are explicit only when control is needed.</li>
+  <li><strong>No hidden costs.</strong> No GC pauses, no implicit copies.</li>
+  <li><strong>Beginner approachability.</strong> One mental model: regions own values, pointers borrow, moves transfer.</li>
+</ul>
+<hr>
 
-  <!-- ── 1. INTRODUCTION ── -->
-  <h2 id="intro"><span class="section-num">1</span> Introduction</h2>
-  <p>Forge is a systems programming language designed for low-level control with compile-time memory and concurrency safety. It achieves this through a <strong>region-based ownership model</strong> with RAII-style lifetime tracking, eliminating the need for a garbage collector, explicit lifetime annotations, or verbose borrow checker gymnastics.</p>
-  <p>Forge targets developers who want Rust-level safety guarantees with a significantly lower annotation burden.</p>
+<h2 id="regions"><span class="sn">2</span> Memory Model &amp; Regions</h2>
+<p>Every value lives in exactly one region. Regions control allocation strategy, lifetime, mutability defaults, and concurrency access.</p>
+<div class="box rule"><div class="bt">Core Rule</div><p>Regions are <strong>linear</strong>. They cannot be copied — only moved or borrowed. A value cannot silently exist in two regions simultaneously.</p></div>
+<table>
+  <tr><th>Keyword</th><th>Allocation</th><th>Lifetime</th><th>Mutable Default</th><th>Cross-thread</th></tr>
+  <tr><td><code>heap</code></td><td>Dynamic</td><td>Explicit destroy or move</td><td>Yes</td><td>No (unless <code>shared</code>)</td></tr>
+  <tr><td><code>stack</code></td><td>Local frame</td><td>End of enclosing scope</td><td>Yes</td><td>No</td></tr>
+  <tr><td><code>static</code></td><td>Program lifetime</td><td>Forever</td><td>No — immutable</td><td>Yes (read-only)</td></tr>
+  <tr><td><code>tls</code></td><td>Thread-local</td><td>Thread lifetime</td><td>Yes</td><td>No</td></tr>
+  <tr><td><code>shared</code></td><td>Dynamic</td><td>Explicit</td><td>Requires <code>Mutex</code></td><td>Yes</td></tr>
+</table>
 
-  <h3 id="philosophy">Design Philosophy</h3>
-  <ul>
-    <li><strong>Safety by default.</strong> Memory errors, data races, and use-after-free are compile-time errors, not runtime surprises.</li>
-    <li><strong>Minimal annotation.</strong> Lifetimes are inferred. Region parameters are explicit only when the programmer needs control.</li>
-    <li><strong>No hidden costs.</strong> Every memory operation has a clear, predictable meaning. No GC pauses, no implicit copies.</li>
-    <li><strong>Beginner approachability.</strong> The mental model — regions own values, pointers borrow them, moves transfer them — is consistent and learnable.</li>
-  </ul>
+<h3 id="defaultregion">Default Region</h3>
+<p>The region annotation is <strong>optional</strong>. When omitted, the region defaults to <code>@stack</code>. This applies to <code>let</code> bindings, parameters, return types, and pointer targets.</p>
+<pre><code><span class="kw">let</span> a: <span class="ty">i32</span>          = <span class="st">10</span>;   <span class="cm">// i32@stack — default</span>
+<span class="kw">let</span> b: <span class="ty">i32</span><span class="op">@</span><span class="reg">heap</span>      = <span class="st">10</span>;   <span class="cm">// i32@heap  — explicit</span>
+<span class="kw">let</span> p: <span class="op">*</span><span class="ty">Point</span>        = &amp;q;   <span class="cm">// *Point@stack — default target</span>
+<span class="kw">let</span> r: <span class="op">*</span><span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span>   = &amp;h;   <span class="cm">// *Point@heap  — explicit</span>
 
-  <hr>
+<span class="kw">fn</span> <span class="fn">add</span>(a: <span class="ty">i32</span>, b: <span class="ty">i32</span>) -> <span class="ty">i32</span> { ... }
+<span class="cm">// equivalent to: fn add(a: i32@stack, b: i32@stack) -> i32@stack</span></code></pre>
+<hr>
 
-  <!-- ── 2. REGIONS ── -->
-  <h2 id="regions"><span class="section-num">2</span> Memory Model &amp; Regions</h2>
-  <p>Regions are the fundamental unit of memory management in Forge. Every value lives in exactly one region. Regions control allocation strategy, lifetime, mutability defaults, and concurrency access.</p>
+<h2 id="pointers"><span class="sn">3</span> Pointers &amp; Ownership</h2>
+<table>
+  <tr><th>Syntax</th><th>Meaning</th><th>Ownership Transfer</th></tr>
+  <tr><td><code>T@R</code></td><td>Owned value in region R</td><td>Yes — move invalidates source and all aliases</td></tr>
+  <tr><td><code>*T@R</code></td><td>Mutable borrow into R</td><td>No — exclusive; compiler tracks last-use</td></tr>
+  <tr><td><code>*const T@R</code></td><td>Immutable borrow into R</td><td>No — shared; many coexist, not with mutable</td></tr>
+</table>
+<div class="box rule"><div class="bt">Alias Invalidation Rule</div><p>Any alias — mutable or immutable — is automatically invalidated the moment its target is <strong>moved or destroyed</strong>. For cross-region moves, old aliases additionally become <em>type-incompatible</em> (§EC1). Both checks are independent and enforced at compile time.</p></div>
+<hr>
 
-  <div class="box rule">
-    <div class="box-title">Core Rule</div>
-    <p>Regions are <strong>linear</strong>. They cannot be copied; they can only be moved or borrowed via pointers. A value cannot silently exist in two regions at once.</p>
-  </div>
-
-  <h3>Built-in Region Types</h3>
-  <table>
-    <tr><th>Keyword</th><th>Allocation</th><th>Lifetime</th><th>Mutability Default</th><th>Cross-thread</th></tr>
-    <tr><td><code>heap</code></td><td>Dynamic</td><td>Explicit destroy or move</td><td>Mutable</td><td>No (unless <code>shared</code>)</td></tr>
-    <tr><td><code>stack</code></td><td>Local frame</td><td>End of enclosing scope</td><td>Mutable</td><td>No</td></tr>
-    <tr><td><code>static</code></td><td>Program lifetime</td><td>Forever</td><td>Immutable</td><td>Yes (read-only)</td></tr>
-    <tr><td><code>tls</code></td><td>Thread-local</td><td>Thread lifetime</td><td>Mutable</td><td>No</td></tr>
-    <tr><td><code>shared</code></td><td>Dynamic</td><td>Explicit</td><td>Requires lock</td><td>Yes</td></tr>
-  </table>
-
-  <h3>Declaring Values in Regions</h3>
-  <pre><code><span class="kw">let</span> p1: <span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span>   = <span class="ty">Point</span>{ .X=<span class="st">0</span>, .Y=<span class="st">0</span> };
-<span class="kw">let</span> p2: <span class="ty">Point</span><span class="op">@</span><span class="reg">stack</span>  = <span class="ty">Point</span>{ .X=<span class="st">1</span>, .Y=<span class="st">1</span> };
-<span class="kw">let</span> p3: <span class="ty">Point</span><span class="op">@</span><span class="reg">static</span> = <span class="ty">Point</span>{ .X=<span class="st">0</span>, .Y=<span class="st">0</span> }; <span class="cm">// immutable by default</span></code></pre>
-
-  <h3>User-Defined Regions</h3>
-  <p>Programmers can declare named regions for arena-style allocation or custom storage lifetimes. A user-defined region can have a custom <strong>drop hook</strong> (see §8), which runs when the region goes out of scope, freeing all contained memory in one operation.</p>
-  <pre><code><span class="kw">region</span> scratch: <span class="reg">heap</span>;          <span class="cm">// heap-backed named region</span>
-<span class="kw">let</span> buf: <span class="ty">Buffer</span><span class="op">@</span>scratch = ...;  <span class="cm">// lives in the scratch arena</span>
-<span class="cm">// when `scratch` exits scope, all contents are freed at once</span></code></pre>
-
-  <hr>
-
-  <!-- ── 3. POINTERS & OWNERSHIP ── -->
-  <h2 id="pointers"><span class="section-num">3</span> Pointers &amp; Ownership</h2>
-
-  <table>
-    <tr><th>Syntax</th><th>Meaning</th><th>Ownership Transfer</th></tr>
-    <tr><td><code>T@R</code></td><td>Owned value in region R</td><td>Yes — moves ownership, invalidates source</td></tr>
-    <tr><td><code>*T@R</code></td><td>Mutable borrow (pointer) into region R</td><td>No — borrows, compiler tracks last-use</td></tr>
-    <tr><td><code>*const T@R</code></td><td>Immutable borrow into region R</td><td>No — read-only, multiple allowed concurrently</td></tr>
-  </table>
-
-  <div class="box rule">
-    <div class="box-title">Alias Invalidation Rule</div>
-    <p>Any alias (<code>*T@R</code> or <code>*const T@R</code>) to a value is automatically invalidated the moment that value is moved or destroyed. Using an invalidated alias is a compile-time error.</p>
-  </div>
-
-  <h3>Borrow vs. Move Example</h3>
-  <pre><code><span class="kw">fn</span> <span class="fn">inc</span>(p: <span class="op">*</span><span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span>) {
-    p.X += <span class="st">1</span>;
-}
-
-<span class="kw">fn</span> <span class="fn">consume</span>(p: <span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span>) {  <span class="cm">// takes ownership</span>
-    destroy p;
-}
-
-<span class="kw">let</span> p1: <span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span> = <span class="ty">Point</span>{ .X=<span class="st">0</span>, .Y=<span class="st">0</span> };
-<span class="kw">let</span> a = &amp;p1;
-<span class="fn">inc</span>(a);       <span class="cm">// ✓ safe borrow</span>
-<span class="fn">consume</span>(p1); <span class="cm">// ✓ ownership moved — `a` is now invalidated by compiler</span>
-<span class="fn">inc</span>(a);       <span class="err">// ✗ compile error: `a` is a dangling alias</span></code></pre>
-
-  <hr>
-
-  <!-- ── 4. RAII & ALIASES ── -->
-  <h2 id="raii"><span class="section-num">4</span> Sequential Aliases &amp; RAII-Style Lifetime Tracking</h2>
-  <p>Forge uses <strong>last-use tracking</strong> to allow sequential mutable aliases without explicit scoping. A mutable alias is considered live from its point of creation to its last use. After the last use, the compiler treats it as dead, and a new mutable alias to the same value is permitted.</p>
-
-  <div class="box rule">
-    <div class="box-title">Exclusivity Rule</div>
-    <p>At any given program point, at most <strong>one mutable alias</strong> (<code>*T@R</code>) to a given value may be live. Multiple immutable aliases (<code>*const T@R</code>) may coexist, but not simultaneously with a mutable alias.</p>
-  </div>
-
-  <pre><code><span class="kw">let</span> a = &amp;p1;
-<span class="fn">inc</span>(a);        <span class="cm">// last use of `a` — compiler marks it dead after this line</span>
-<span class="kw">let</span> b = &amp;p1;  <span class="cm">// ✓ allowed: `a` is dead</span>
+<h2 id="raii"><span class="sn">4</span> Sequential Aliases &amp; RAII Lifetime Tracking</h2>
+<p>A mutable alias is live from creation to its last use. After the last use the compiler marks it dead and a new mutable alias to the same value is permitted. At any program point at most one mutable alias to a given value may be live.</p>
+<pre><code><span class="kw">let</span> a = &amp;p1;
+<span class="fn">inc</span>(a);        <span class="cm">// last use of `a` — dead after this line</span>
+<span class="kw">let</span> b = &amp;p1;  <span class="cm">// ✓ `a` is dead</span>
 <span class="fn">inc</span>(b);
-print(p1.X);  <span class="cm">// ✓ allowed: `b` is dead after the inc call above</span></code></pre>
+print(p1.X);   <span class="cm">// ✓ `b` is dead after the inc call above</span></code></pre>
+<hr>
 
-  <div class="box note">
-    <div class="box-title">Escape Hatch: Explicit Scope</div>
-    <p>When the compiler's last-use inference is insufficient (e.g. inside conditional branches), use a block scope to explicitly bound an alias's lifetime. The alias provably dies at the closing brace.</p>
-  </div>
-  <pre><code>{
-    <span class="kw">let</span> a = &amp;p1;
-    <span class="fn">inc</span>(a);
-}  <span class="cm">// `a` is provably dead here — no ambiguity</span>
-<span class="kw">let</span> b = &amp;p1;  <span class="cm">// ✓ unambiguously allowed</span></code></pre>
+<h2 id="crossregion"><span class="sn ec">EC1</span> Edge Case: Cross-Region Moves</h2>
+<p>A cross-region move transfers a value's bytes from one region to another and deallocates the source. Because the region is part of the type, the annotated type changes: <code>T@heap</code> moved to a stack variable becomes <code>T@stack</code>.</p>
 
-  <hr>
+<h3>What Happens to Existing Borrows</h3>
+<p>Two independent enforcement layers fire simultaneously on any cross-region move:</p>
+<ol>
+  <li><strong>Standard move invalidation.</strong> All aliases to the moved value are invalidated by the move rule (§3).</li>
+  <li><strong>Type incompatibility.</strong> A <code>*T@heap</code> borrow cannot point into a <code>T@stack</code> value. The region mismatch is a type error independently of invalidation.</li>
+</ol>
+<pre><code><span class="kw">let</span> h: <span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span>  = <span class="ty">Point</span>{ .X=<span class="st">1</span>, .Y=<span class="st">2</span> };
+<span class="kw">let</span> a: <span class="op">*</span><span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span> = &amp;h;
+<span class="fn">inc</span>(a);
 
-  <!-- ── 5. DEFAULT REGION ── -->
-  <h2 id="defaultregion"><span class="section-num">5</span> Default Region</h2>
-  <p>The region annotation on a type is <strong>optional</strong>. When omitted, the region defaults to <code>@stack</code>. This keeps common local variable declarations clean while still permitting explicit region control whenever needed.</p>
+<span class="kw">let</span> s: <span class="ty">Point</span><span class="op">@</span><span class="reg">stack</span> = h;   <span class="cm">// cross-region move: bytes copied, heap freed</span>
+                            <span class="cm">// `h` moved; `a` is (1) invalidated AND (2) type-incompatible</span>
+<span class="fn">inc</span>(a);  <span class="err">// ✗ compile error — dangling alias (rule 1)</span>
+         <span class="err">// ✗ compile error — *Point@heap cannot refer to Point@stack (rule 2)</span></code></pre>
 
-  <pre><code><span class="kw">let</span> a: <span class="ty">i32</span> = <span class="st">10</span>;            <span class="cm">// i32@stack  — default</span>
-<span class="kw">let</span> b: <span class="ty">i32</span><span class="op">@</span><span class="reg">heap</span> = <span class="st">10</span>;        <span class="cm">// i32@heap   — explicit</span>
-<span class="kw">let</span> c: <span class="ty">Point</span> = <span class="ty">Point</span>{...};   <span class="cm">// Point@stack — default</span>
-<span class="kw">let</span> d: <span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span> = <span class="ty">Point</span>{...}; <span class="cm">// Point@heap  — explicit</span></code></pre>
+<h3>Move Compatibility Matrix</h3>
+<table>
+  <tr><th>From → To</th><th>Status</th><th>Reason</th></tr>
+  <tr><td><code>heap → stack</code></td><td><span class="tok">✓ allowed</span></td><td>Memcpy + heap dealloc. Compiler warns if moved type exceeds 1 KiB (configurable).</td></tr>
+  <tr><td><code>stack → heap</code></td><td><span class="tok">✓ allowed</span></td><td>Heap alloc + memcpy. Common pattern for extending lifetime beyond a scope.</td></tr>
+  <tr><td><code>heap → shared</code></td><td><span class="tok">✓ allowed</span></td><td>Value becomes cross-thread accessible. Must be wrapped in <code>Mutex</code> for mutation.</td></tr>
+  <tr><td><code>stack → shared</code></td><td><span class="tok">✓ allowed</span></td><td>Stack value copied into shared allocation.</td></tr>
+  <tr><td><code>tls → heap</code></td><td><span class="tok">✓ allowed</span></td><td>Transfers ownership out of thread-local. Heap alone does not imply cross-thread sharing.</td></tr>
+  <tr><td><code>tls → shared</code></td><td><span class="tno">✗ forbidden</span></td><td>Thread-local memory is not safe to share across threads. Unconditional compile error.</td></tr>
+  <tr><td><code>any → static</code></td><td><span class="tno">✗ forbidden</span></td><td><code>static</code> is immutable and program-lifetime. Values cannot be moved in after program start.</td></tr>
+  <tr><td><code>static → any</code></td><td><span class="tno">✗ forbidden</span></td><td><code>static</code> values are immortal. Use <code>*const T@static</code> borrows instead.</td></tr>
+  <tr><td><code>heap → tls</code></td><td><span class="tcond">⚠ conditional</span></td><td>Allowed only when the move is provably on the thread that owns the tls region.</td></tr>
+  <tr><td>user-region → *</td><td><span class="tcond">⚠ follows backing</span></td><td>A user-defined region backed by <code>heap</code> follows heap rules, etc.</td></tr>
+</table>
+<div class="box warn"><div class="bt">Large Stack Move Warning</div><p>Moving a large heap value to <code>stack</code> may overflow the stack frame at runtime. The compiler emits a warning when the moved type exceeds a configurable threshold (default 1 KiB). Suppress with <code>#[allow(large_stack_move)]</code>.</p></div>
+<hr>
 
-  <p>The same rule applies to function parameters and return types:</p>
-  <pre><code><span class="kw">fn</span> <span class="fn">add</span>(a: <span class="ty">i32</span>, b: <span class="ty">i32</span>) -> <span class="ty">i32</span> { ... }
-<span class="cm">// equivalent to: fn add(a: i32@stack, b: i32@stack) -> i32@stack</span>
+<h2 id="liveness"><span class="sn ec">EC2</span> Edge Case: Conditional &amp; Loop Last-Use Tracking</h2>
+<p>The "last-use" and "join point" descriptions in earlier drafts are intuitive but not implementable as stated. The normative definition is <strong>backward dataflow liveness analysis on the control-flow graph (CFG)</strong>.</p>
+<div class="box rule"><div class="bt">Normative Liveness Definition</div><p>An alias <code>a</code> is <strong>live-in</strong> at CFG node N if there exists a path from N to a use of <code>a</code> that does not pass through a kill of <code>a</code>. A kill is a move, <code>destroy</code>, or scope exit. An alias is <strong>dead</strong> at N if no such path exists. A new mutable alias to the same value is permitted only at program points where the original is dead.</p></div>
+<p>This handles all branch shapes, back edges, <code>break</code>, <code>continue</code>, and early returns uniformly without special cases.</p>
 
-<span class="kw">fn</span> <span class="fn">make_point</span>() -> <span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span> { ... }
-<span class="cm">// explicit — caller knows the result is heap-allocated</span></code></pre>
-
-  <div class="box note">
-    <div class="box-title">Pointers &amp; Default Region</div>
-    <p>When a pointer type omits the region, it defaults to pointing into <code>@stack</code>: <code>*Point</code> means <code>*Point@stack</code>. If you take a reference to a heap value, the region must be stated explicitly: <code>let p: *Point@heap = &amp;heap_val;</code></p>
-  </div>
-
-  <hr>
-
-  <!-- ── 6. GENERICS ── -->
-  <h2 id="generics"><span class="section-num">6</span> Generics &amp; Region Polymorphism</h2>
-  <p>Regions are <strong>first-class type parameters</strong>. A function can be generic over both a value type <code>T</code> and a region <code>R</code>. Region inference applies at call sites, so callers rarely need to name the region explicitly.</p>
-
-  <pre><code><span class="cm">// Explicit region parameter — R inferred at call site</span>
-<span class="kw">fn</span> <span class="fn">first</span>&lt;<span class="ty">T</span>, <span class="ty">R</span>&gt;(slice: <span class="op">*</span>[<span class="ty">T</span>]<span class="op">@</span><span class="ty">R</span>) -> <span class="op">*</span><span class="ty">T</span><span class="op">@</span><span class="ty">R</span> {
-    <span class="kw">return</span> &amp;slice[<span class="st">0</span>];
-}
-
-<span class="kw">let</span> items: [<span class="ty">i32</span>]<span class="op">@</span><span class="reg">heap</span> = [<span class="st">1</span>, <span class="st">2</span>, <span class="st">3</span>];
-<span class="kw">let</span> x = <span class="fn">first</span>(items);  <span class="cm">// R inferred as `heap` — caller writes nothing</span></code></pre>
-
-  <!-- ── 7. CONSTRAINTS ── -->
-  <h2 id="constraints"><span class="section-num">7</span> Constraints</h2>
-
-  <p><code>constraint</code> is a keyword for defining named constraint groups. Constraints come in two kinds — <strong>region constraints</strong> and <strong>type constraints</strong> — and the kind is inferred from the right-hand side at declaration time.</p>
-
-  <div class="box rule">
-    <div class="box-title">Constraint Separation Rule</div>
-    <p>A <strong>region constraint</strong> may only be applied to a region parameter. A <strong>type constraint</strong> may only be applied to a type parameter. Cross-applying one kind to the other is a compile-time error. Mixing region names and type names on the right-hand side of a <code>constraint</code> declaration is also a compile-time error.</p>
-  </div>
-
-  <h3>Declaring Constraints</h3>
-  <pre><code><span class="cm">// Region constraint — RHS contains only region names</span>
-<span class="kw">constraint</span> <span class="ty">Allocable</span> = <span class="reg">heap</span> | <span class="reg">stack</span>;
-<span class="kw">constraint</span> <span class="ty">Mutable</span>   = <span class="reg">heap</span> | <span class="reg">stack</span> | <span class="reg">tls</span>;  <span class="cm">// excludes `static`</span>
-<span class="kw">constraint</span> <span class="ty">ThreadSafe</span> = <span class="reg">shared</span> | <span class="reg">static</span>;
-
-<span class="cm">// Type constraint — RHS contains only types or interfaces</span>
-<span class="kw">constraint</span> <span class="ty">Numeric</span>   = <span class="ty">i32</span> | <span class="ty">i64</span> | <span class="ty">f32</span> | <span class="ty">f64</span>;
-<span class="kw">constraint</span> <span class="ty">Printable</span> = <span class="ty">Stringer</span>;  <span class="cm">// any type satisfying the Stringer interface</span>
-
-<span class="cm">// ✗ Compile error — cannot mix region names and type names in one constraint</span>
-<span class="kw">constraint</span> <span class="ty">Bad</span> = <span class="reg">heap</span> | <span class="ty">i32</span>; <span class="err">// ✗</span></code></pre>
-
-  <h3>Using Constraints</h3>
-  <pre><code><span class="cm">// R is a region parameter — Allocable (region constraint) applies ✓</span>
-<span class="kw">fn</span> <span class="fn">clone</span>&lt;<span class="ty">T</span>, <span class="ty">R</span>: <span class="ty">Allocable</span>&gt;(p: <span class="op">*</span><span class="ty">T</span><span class="op">@</span><span class="ty">R</span>) -> <span class="ty">T</span><span class="op">@</span><span class="ty">R</span> {
-    <span class="kw">let</span> copy: <span class="ty">T</span><span class="op">@</span><span class="ty">R</span> = allocate_in&lt;<span class="ty">R</span>&gt;();
-    <span class="op">*</span>copy = <span class="op">*</span>p;
-    <span class="kw">return</span> copy;
-}
-
-<span class="cm">// T is a type parameter — Numeric (type constraint) applies ✓</span>
-<span class="kw">fn</span> <span class="fn">sum</span>&lt;<span class="ty">T</span>: <span class="ty">Numeric</span>&gt;(a: <span class="ty">T</span>, b: <span class="ty">T</span>) -> <span class="ty">T</span> {
-    <span class="kw">return</span> a + b;
-}
-
-<span class="cm">// ✗ Compile error — Allocable is a region constraint, T is a type parameter</span>
-<span class="kw">fn</span> <span class="fn">bad</span>&lt;<span class="ty">T</span>: <span class="ty">Allocable</span>&gt;(...) <span class="err">// ✗</span>
-
-<span class="cm">// ✗ Compile error — Numeric is a type constraint, R is a region parameter</span>
-<span class="kw">fn</span> <span class="fn">bad</span>&lt;<span class="ty">R</span>: <span class="ty">Numeric</span>&gt;(...) <span class="err">// ✗</span></code></pre>
-
-  <p>Inline region/type names are also valid without a named constraint:</p>
-  <pre><code><span class="kw">fn</span> <span class="fn">inc</span>&lt;<span class="ty">R</span>: <span class="reg">heap</span> | <span class="reg">stack</span>&gt;(p: <span class="op">*</span><span class="ty">Point</span><span class="op">@</span><span class="ty">R</span>) { p.X += <span class="st">1</span>; }
-<span class="kw">fn</span> <span class="fn">double</span>&lt;<span class="ty">T</span>: <span class="ty">i32</span> | <span class="ty">i64</span>&gt;(x: <span class="ty">T</span>) -> <span class="ty">T</span>   { <span class="kw">return</span> x * <span class="st">2</span>; }</code></pre>
-
-  <div class="box warn">
-    <div class="box-title">Constraint Violation = Compile Error at Definition</div>
-    <p>Constraint violations are caught when the function body is type-checked, not only at call sites. A function that mutates through a region-polymorphic pointer without a <code>Mutable</code>-equivalent constraint will fail at its own definition.</p>
-  </div>
-
-  <hr>
-
-  <!-- ── 8. METHODS & INTERFACES ── -->
-  <h2 id="methods"><span class="section-num">8</span> Methods</h2>
-  <p>Forge uses a <strong>Go-style receiver syntax</strong> for methods. Methods are declared outside the type definition, attached via a receiver parameter. The receiver is a pointer or value of the type, and its region annotation follows the same rules as any other type annotation (default <code>@stack</code>).</p>
-
-  <pre><code><span class="kw">struct</span> <span class="ty">Point</span> { X: <span class="ty">f32</span>, Y: <span class="ty">f32</span> }
-
-<span class="cm">// Value receiver — gets a copy; cannot mutate original</span>
-<span class="kw">fn</span> (<span class="ty">Point</span>) <span class="fn">length</span>(self) -> <span class="ty">f32</span> {
-    <span class="kw">return</span> sqrt(self.X*self.X + self.Y*self.Y);
-}
-
-<span class="cm">// Pointer receiver — mutates in place</span>
-<span class="kw">fn</span> (<span class="op">*</span><span class="ty">Point</span>) <span class="fn">scale</span>(self, factor: <span class="ty">f32</span>) {
-    self.X *= factor;
-    self.Y *= factor;
-}
-
-<span class="cm">// Explicit region on receiver</span>
-<span class="kw">fn</span> (<span class="op">*</span><span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span>) <span class="fn">move_to_origin</span>(self) {
-    self.X = <span class="st">0.0</span>;
-    self.Y = <span class="st">0.0</span>;
-}</code></pre>
-
-  <h3>Calling Methods</h3>
-  <pre><code><span class="kw">let</span> p: <span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span> = <span class="ty">Point</span>{ .X=<span class="st">3.0</span>, .Y=<span class="st">4.0</span> };
-
-<span class="kw">let</span> len = p.<span class="fn">length</span>();    <span class="cm">// value receiver — copy made</span>
-p.<span class="fn">scale</span>(<span class="st">2.0</span>);            <span class="cm">// pointer receiver — p mutated in place</span>
-                          <span class="cm">// compiler auto-takes &p when receiver is *T</span></code></pre>
-
-  <div class="box note">
-    <div class="box-title">Auto-Reference Rule</div>
-    <p>When calling a pointer-receiver method on a non-pointer value, the compiler automatically takes a reference. The caller never needs to write <code>&amp;p.scale(...)</code>. This is consistent with Go's behavior.</p>
-  </div>
-
-  <h3>Region-Polymorphic Receivers</h3>
-  <p>A method can be generic over the receiver's region:</p>
-  <pre><code><span class="kw">fn</span> (<span class="op">*</span><span class="ty">Point</span><span class="op">@</span><span class="ty">R</span>) <span class="fn">translate</span>&lt;<span class="ty">R</span>: <span class="ty">Mutable</span>&gt;(self, dx: <span class="ty">f32</span>, dy: <span class="ty">f32</span>) {
-    self.X += dx;
-    self.Y += dy;
-}
-<span class="cm">// Works on Point@heap, Point@stack, Point@tls — but not Point@static</span></code></pre>
-
-  <!-- ── INTERFACES ── -->
-  <h2 id="interfaces"><span class="section-num">8.1</span> Interfaces</h2>
-  <p>Interfaces are declared as named sets of method signatures. Any type that implements all methods of an interface <strong>implicitly satisfies</strong> it — no <code>implements</code> keyword or explicit registration required. This is identical to Go's structural typing.</p>
-
-  <pre><code><span class="kw">interface</span> <span class="ty">Shape</span> {
-    <span class="kw">fn</span> <span class="fn">area</span>(self) -> <span class="ty">f32</span>;
-    <span class="kw">fn</span> <span class="fn">perimeter</span>(self) -> <span class="ty">f32</span>;
-}
-
-<span class="kw">interface</span> <span class="ty">Stringer</span> {
-    <span class="kw">fn</span> <span class="fn">to_string</span>(self) -> <span class="ty">str</span>;
-}
-
-<span class="cm">// Point satisfies Shape if both methods are defined on it</span>
-<span class="kw">struct</span> <span class="ty">Circle</span> { radius: <span class="ty">f32</span> }
-
-<span class="kw">fn</span> (<span class="ty">Circle</span>) <span class="fn">area</span>(self) -> <span class="ty">f32</span>      { <span class="kw">return</span> <span class="st">3.14159</span> * self.radius * self.radius; }
-<span class="kw">fn</span> (<span class="ty">Circle</span>) <span class="fn">perimeter</span>(self) -> <span class="ty">f32</span> { <span class="kw">return</span> <span class="st">2.0</span> * <span class="st">3.14159</span> * self.radius; }
-<span class="cm">// Circle now implicitly satisfies Shape — no declaration needed</span></code></pre>
-
-  <h3>Using Interfaces as Types</h3>
-  <pre><code><span class="kw">fn</span> <span class="fn">print_area</span>(s: <span class="ty">Shape</span>) {
-    print(s.<span class="fn">area</span>());
-}
-
-<span class="kw">let</span> c = <span class="ty">Circle</span>{ .radius=<span class="st">5.0</span> };
-<span class="fn">print_area</span>(c);   <span class="cm">// ✓ Circle satisfies Shape</span></code></pre>
-
-  <h3>Interfaces as Type Constraints</h3>
-  <p>Interfaces can be used directly as type constraints, giving compile-time (monomorphized) dispatch rather than dynamic dispatch:</p>
-  <pre><code><span class="cm">// Static dispatch — T must satisfy Shape at compile time</span>
-<span class="kw">fn</span> <span class="fn">largest_area</span>&lt;<span class="ty">T</span>: <span class="ty">Shape</span>&gt;(items: [<span class="ty">T</span>]) -> <span class="ty">f32</span> {
-    <span class="kw">let</span> max: <span class="ty">f32</span> = <span class="st">0.0</span>;
-    <span class="kw">for</span> item <span class="kw">in</span> items { <span class="kw">if</span> item.<span class="fn">area</span>() > max { max = item.<span class="fn">area</span>(); } }
-    <span class="kw">return</span> max;
-}
-
-<span class="cm">// Dynamic dispatch — interface value, resolved at runtime</span>
-<span class="kw">fn</span> <span class="fn">print_any_area</span>(s: <span class="ty">Shape</span>) { print(s.<span class="fn">area</span>()); }</code></pre>
-
-  <h2 id="receiver-regions"><span class="section-num">8.2</span> Receiver Regions &amp; Interface Satisfaction</h2>
-  <p>An interface method signature may include a region annotation on the receiver. If it does, only types whose receiver method matches that region satisfy the interface. If the interface omits the region, any region satisfies it.</p>
-
-  <pre><code><span class="kw">interface</span> <span class="ty">HeapMutator</span> {
-    <span class="kw">fn</span> <span class="fn">reset</span>(<span class="op">*</span>self<span class="op">@</span><span class="reg">heap</span>);   <span class="cm">// receiver must be heap-pointer specifically</span>
-}
-
-<span class="kw">interface</span> <span class="ty">AnyMutator</span> {
-    <span class="kw">fn</span> <span class="fn">reset</span>(<span class="op">*</span>self);         <span class="cm">// any region satisfies this</span>
-}</code></pre>
-
-  <hr>
-
-  <!-- ── 6. LIFETIME RULES ── -->
-  <h2 id="lifetime-rules"><span class="section-num">10</span> Formal Lifetime Rules</h2>
-
-  <div class="box rule">
-    <div class="box-title">Join-Point Lifetime Rule</div>
-    <p>An alias <code>a</code> is live from its point of creation to its <strong>join point</strong> — the earliest program point that all control-flow paths from <code>a</code>'s creation converge on, after which <code>a</code> is no longer used on any path. At and after the join point, <code>a</code> is dead and a new alias to the same value is permitted.</p>
-  </div>
-
-  <h2 id="conditionals"><span class="section-num">10.1</span> Conditionals</h2>
-  <p>The join point of an <code>if/else</code> is the first instruction after the entire <code>if</code> block. If an alias is used on <em>any</em> branch, it remains live until after the full block exits.</p>
-
-  <div class="two-col">
-    <div>
-      <div class="label ok">✓ Allowed</div>
-      <pre><code><span class="kw">let</span> a = &amp;p1;
+<h3>Case 1 — Used in only one branch</h3>
+<pre><code><span class="kw">let</span> a = &amp;p1;
 <span class="kw">if</span> cond {
-    <span class="fn">inc</span>(a);   <span class="cm">// use on one path</span>
+    <span class="fn">inc</span>(a);       <span class="cm">// use on true-path only</span>
 }
-<span class="fn">inc</span>(a);       <span class="cm">// use on both paths</span>
-              <span class="cm">// join point — a dies here</span>
-<span class="kw">let</span> b = &amp;p1; <span class="cm">// ✓ safe</span></code></pre>
-    </div>
-    <div>
-      <div class="label err">✗ Compile Error</div>
-      <pre><code><span class="kw">let</span> a = &amp;p1;
-<span class="kw">if</span> cond {
-    <span class="fn">inc</span>(a);
-    <span class="cm">// a still live at this join point</span>
-    <span class="kw">let</span> b = &amp;p1; <span class="err">// ✗ two mutable aliases live</span>
-    <span class="fn">inc</span>(b);
-}</code></pre>
-    </div>
-  </div>
+<span class="cm">// No path from here to a use of `a` — dead.</span>
+<span class="kw">let</span> b = &amp;p1;   <span class="cm">// ✓ allowed</span></code></pre>
 
-  <p>When both branches use the alias, the join point is after the full if/else:</p>
-  <pre><code><span class="kw">let</span> a = &amp;p1;
+<h3>Case 2 — Used after the branch on all paths</h3>
+<pre><code><span class="kw">let</span> a = &amp;p1;
 <span class="kw">if</span> cond {
     <span class="fn">inc</span>(a);          <span class="cm">// use on true-path</span>
 } <span class="kw">else</span> {
-    <span class="fn">double_inc</span>(a);   <span class="cm">// use on false-path</span>
+    print(<span class="st">"skip"</span>);  <span class="cm">// no use of `a`</span>
 }
-<span class="cm">// join point — a is dead here (used on all paths, both now ended)</span>
-<span class="kw">let</span> b = &amp;p1;         <span class="cm">// ✓ allowed</span></code></pre>
+<span class="fn">inc</span>(a);             <span class="cm">// use on all paths — `a` is live throughout the if block</span>
+<span class="kw">let</span> b = &amp;p1;        <span class="cm">// ✓ `a` dead after the final inc</span></code></pre>
 
-  <p>When only one branch uses the alias, it is still live until after the full block:</p>
-  <pre><code><span class="kw">let</span> a = &amp;p1;
+<h3>Case 3 — New alias inside branch while original is live post-branch</h3>
+<pre><code><span class="kw">let</span> a = &amp;p1;
 <span class="kw">if</span> cond {
-    <span class="fn">inc</span>(a);           <span class="cm">// use on true-path only</span>
-} <span class="kw">else</span> {
-    print(<span class="st">"no-op"</span>);   <span class="cm">// no use of `a`</span>
+    <span class="fn">inc</span>(a);
+    <span class="kw">let</span> b = &amp;p1;  <span class="err">// ✗ `a` live (used after if on all paths) — two mutable aliases coexist</span>
+    <span class="fn">inc</span>(b);
 }
-<span class="cm">// join point — a dead here (conservative: if `a` might be used on any path,
-// it is live until all paths have exited)</span>
-<span class="kw">let</span> b = &amp;p1;          <span class="cm">// ✓ allowed</span></code></pre>
+<span class="fn">inc</span>(a);</code></pre>
 
-  <h2 id="loops"><span class="section-num">10.2</span> Loops</h2>
-  <p>If an alias is used anywhere inside a loop body, it remains live for the <strong>entire loop duration</strong>. A new alias to the same value cannot be created inside the loop body if the original is still live.</p>
-
-  <div class="two-col">
-    <div>
-      <div class="label ok">✓ Allowed</div>
-      <pre><code><span class="kw">let</span> a = &amp;p1;
+<h3>Case 4 — Conditional use inside loop (back-edge keeps alive)</h3>
+<pre><code><span class="kw">let</span> a = &amp;p1;
 <span class="kw">loop</span> {
-    <span class="fn">inc</span>(a);  <span class="cm">// a live entire loop</span>
-}
-<span class="cm">// a dead after loop exits</span>
-<span class="kw">let</span> b = &amp;p1; <span class="cm">// ✓</span></code></pre>
-    </div>
-    <div>
-      <div class="label err">✗ Compile Error</div>
-      <pre><code><span class="kw">let</span> a = &amp;p1;
+    <span class="kw">if</span> flag { <span class="fn">inc</span>(a); }
+    <span class="cm">// Back-edge: path from here → loop top → inc(a). `a` is live.</span>
+    <span class="kw">let</span> b = &amp;p1;  <span class="err">// ✗ compile error</span>
+}</code></pre>
+
+<h3>Case 5 — Loop with unconditional break</h3>
+<pre><code><span class="kw">let</span> a = &amp;p1;
 <span class="kw">loop</span> {
     <span class="fn">inc</span>(a);
-    <span class="kw">let</span> b = &amp;p1; <span class="err">// ✗ a still live</span>
-    <span class="fn">inc</span>(b);
-}</code></pre>
-    </div>
-  </div>
-
-  <hr>
-
-  <!-- ── 7. CONDITIONAL MOVES ── -->
-  <h2 id="condmove"><span class="section-num">11</span> Conditional Move Semantics</h2>
-  <p>A <strong>conditional move</strong> occurs when ownership of a value is transferred on only one control-flow path. After the branch, the compiler cannot statically guarantee whether the value is still valid.</p>
-
-  <div class="box rule">
-    <div class="box-title">Conditional Move Rule</div>
-    <p>If a value is moved on any branch of a conditional, the compiler marks it as <strong>possibly moved</strong> after the join point. Using a possibly-moved value is a compile-time error unless the programmer explicitly handles both cases.</p>
-  </div>
-
-  <h3>Handling Conditional Moves</h3>
-  <p>There are three valid patterns:</p>
-
-  <p><strong>1. Move on all branches</strong> — value is definitively moved, no use permitted after:</p>
-  <pre><code><span class="kw">if</span> cond {
-    <span class="fn">consume</span>(p1);   <span class="cm">// moved on true-path</span>
-} <span class="kw">else</span> {
-    <span class="fn">consume</span>(p1);   <span class="cm">// moved on false-path</span>
+    <span class="kw">break</span>;    <span class="cm">// unconditional — back-edge unreachable</span>
 }
-<span class="cm">// p1 is definitively moved — any use here is a compile error</span></code></pre>
+<span class="cm">// No path from here back to inc(a). `a` is dead.</span>
+<span class="kw">let</span> b = &amp;p1;  <span class="cm">// ✓ allowed</span></code></pre>
 
-  <p><strong>2. Reinitialize after conditional move</strong>:</p>
-  <pre><code><span class="kw">if</span> cond {
-    <span class="fn">consume</span>(p1);                         <span class="cm">// moved on true-path</span>
-    p1 = <span class="ty">Point</span>{ .X=<span class="st">0</span>, .Y=<span class="st">0</span> };           <span class="cm">// reinitialized on true-path</span>
-}
-<span class="fn">inc</span>(&amp;p1); <span class="cm">// ✓ safe — p1 is valid on both paths</span></code></pre>
-
-  <p><strong>3. Explicitly guard with <code>is_valid</code></strong> (for complex control flow):</p>
-  <pre><code><span class="kw">if</span> cond { <span class="fn">consume</span>(p1); }
-
-<span class="kw">if</span> is_valid(p1) {    <span class="cm">// compiler-known dynamic check for possibly-moved values</span>
-    <span class="fn">inc</span>(&amp;p1);
-}</code></pre>
-
-  <div class="box warn">
-    <div class="box-title">No Implicit Copies on Move</div>
-    <p>Forge never silently copies a value to resolve a conditional move ambiguity. If the programmer does not reinitialize or guard, the compiler emits an error and requires an explicit resolution.</p>
-  </div>
-
-  <hr>
-
-  <!-- ── 8. CONCURRENCY ── -->
-  <h2 id="shared"><span class="section-num">12</span> Shared Regions &amp; Concurrency</h2>
-  <p>The <code>shared</code> region is accessible across threads. Immutable access to <code>shared</code> values is always safe and requires no synchronization. <strong>Mutable access requires a lock.</strong></p>
-
-  <h2 id="locks">8.1 Value-Level Locking</h2>
-
-  <div class="box rule">
-    <div class="box-title">Locking Granularity Rule</div>
-    <p>Locks in Forge are attached to <strong>values</strong>, not regions. Locking a whole region would be too coarse for real programs and would contradict Forge's value-level exclusivity model.</p>
-  </div>
-
-  <p>Mutable values in the <code>shared</code> region must be wrapped in <code>Mutex&lt;T&gt;</code>:</p>
-  <pre><code><span class="kw">let</span> p: <span class="ty">Mutex</span>&lt;<span class="ty">Point</span>&gt;<span class="op">@</span><span class="reg">shared</span> = <span class="ty">Mutex</span>::new(<span class="ty">Point</span>{ .X=<span class="st">0</span>, .Y=<span class="st">0</span> });
-
-<span class="cm">// On thread A:</span>
-<span class="kw">lock</span>(p) |guard| {
-    guard.X += <span class="st">1</span>;  <span class="cm">// exclusive mutable access inside lock block</span>
-}
-
-<span class="cm">// On thread B (simultaneous — safe, will block until A releases):</span>
-<span class="kw">lock</span>(p) |guard| {
-    guard.Y += <span class="st">1</span>;
-}</code></pre>
-
-  <p>Immutable access to <code>shared</code> values does not require a lock:</p>
-  <pre><code><span class="kw">let</span> config: <span class="ty">Config</span><span class="op">@</span><span class="reg">shared</span> = load_config();  <span class="cm">// immutable after init</span>
-<span class="cm">// Any thread may read `config` freely — no lock needed</span>
-print(config.max_connections);</code></pre>
-
-  <h2 id="parallel">8.2 Parallel Safety Guarantees</h2>
-  <p>Forge enforces value-level exclusivity at compile time. Two <code>spawn</code> blocks cannot hold simultaneous mutable references to the same value.</p>
-
-  <div class="two-col">
-    <div>
-      <div class="label ok">✓ Safe — different values</div>
-      <pre><code><span class="kw">spawn</span> { <span class="fn">inc</span>(&amp;p1); }
-<span class="kw">spawn</span> { <span class="fn">inc</span>(&amp;p2); }
-<span class="cm">// p1 and p2 are independent</span></code></pre>
-    </div>
-    <div>
-      <div class="label err">✗ Compile Error — same value</div>
-      <pre><code><span class="kw">spawn</span> { <span class="fn">inc</span>(&amp;p1); }
-<span class="kw">spawn</span> { <span class="fn">inc</span>(&amp;p1); }
-<span class="err">// ✗ data race: two mutable aliases</span>
-<span class="err">//   to p1 across threads</span></code></pre>
-    </div>
-  </div>
-
-  <p>Shared immutable access across threads is always permitted:</p>
-  <pre><code><span class="kw">let</span> data: [<span class="ty">i32</span>]<span class="op">@</span><span class="reg">static</span> = [<span class="st">1</span>, <span class="st">2</span>, <span class="st">3</span>];
-<span class="kw">spawn</span> { print(data[<span class="st">0</span>]); }   <span class="cm">// ✓ immutable read</span>
-<span class="kw">spawn</span> { print(data[<span class="st">1</span>]); }   <span class="cm">// ✓ immutable read — concurrent fine</span></code></pre>
-
-  <hr>
-
-  <!-- ── 9. DESTRUCTION ── -->
-  <h2 id="destruction"><span class="section-num">13</span> Destruction &amp; RAII Hooks</h2>
-  <p>Values are destroyed either <strong>explicitly</strong> via <code>destroy</code>, or <strong>implicitly</strong> when their owning region exits scope. Programmers can define a custom drop hook that runs before memory is freed.</p>
-
-  <pre><code><span class="cm">// Explicit destruction</span>
-<span class="kw">let</span> p: <span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span> = ...;
-destroy p;  <span class="cm">// drop hook runs, then memory freed</span>
-
-<span class="cm">// Implicit destruction (stack)</span>
-{
-    <span class="kw">let</span> q: <span class="ty">Point</span><span class="op">@</span><span class="reg">stack</span> = ...;
-}  <span class="cm">// q's drop hook runs here automatically</span>
-
-<span class="cm">// User-defined drop hook</span>
-<span class="kw">impl</span> <span class="ty">Drop</span> <span class="kw">for</span> <span class="ty">FileHandle</span> {
-    <span class="kw">fn</span> <span class="fn">drop</span>(<span class="kw">self</span>: <span class="op">*</span><span class="ty">FileHandle</span>) {
-        close_fd(<span class="kw">self</span>.fd);   <span class="cm">// OS handle released before memory freed</span>
+<h3>Case 6 — Early return inside branch</h3>
+<pre><code><span class="kw">fn</span> <span class="fn">process</span>(p1: <span class="ty">Point</span>) {
+    <span class="kw">let</span> a = &amp;p1;
+    <span class="kw">if</span> err {
+        log();
+        <span class="kw">return</span>;   <span class="cm">// path ends — `a` not used after this</span>
     }
+    <span class="fn">inc</span>(a);        <span class="cm">// use on surviving path</span>
+    <span class="kw">let</span> b = &amp;p1;  <span class="cm">// ✓ `a` dead after inc</span>
+}</code></pre>
+<div class="box note"><div class="bt">Conservative Fallback</div><p>When liveness is inconclusive (indirect control flow, function pointers), the compiler treats the alias as live until the end of its enclosing lexical scope. An explicit block scope <code>{ let a = &amp;p1; ... }</code> always terminates liveness at the closing brace — the recommended escape hatch for complex cases.</p></div>
+<hr>
+
+<h2 id="sharedaliasing"><span class="sn ec">EC3</span> Edge Case: Shared Region Aliasing &amp; Locking Rules</h2>
+
+<h3>Rule 1 — Raw mutable borrows into <code>shared</code> are forbidden</h3>
+<p>A <code>*T@shared</code> mutable borrow is a compile error in all contexts. Mutation must go through <code>Mutex&lt;T&gt;@shared</code> and a <code>lock</code> block.</p>
+<div class="two">
+  <div><div class="lbl ok">✓ Correct</div>
+<pre><code><span class="kw">let</span> m: <span class="ty">Mutex</span>&lt;<span class="ty">Point</span>&gt;<span class="op">@</span><span class="reg">shared</span>
+    = <span class="ty">Mutex</span>::new(<span class="ty">Point</span>{...});
+<span class="kw">lock</span>(m) |g| { g.X += <span class="st">1</span>; }</code></pre></div>
+  <div><div class="lbl err">✗ Compile Error</div>
+<pre><code><span class="kw">let</span> p: <span class="ty">Point</span><span class="op">@</span><span class="reg">shared</span> = <span class="ty">Point</span>{...};
+<span class="kw">let</span> a: <span class="op">*</span><span class="ty">Point</span><span class="op">@</span><span class="reg">shared</span> = &amp;p; <span class="err">// ✗</span>
+a.X += <span class="st">1</span>;</code></pre></div>
+</div>
+
+<h3>Rule 2 — Immutable shared values need no lock</h3>
+<p>A <code>T@shared</code> not wrapped in <code>Mutex</code> is <strong>permanently immutable</strong> after initialization. Any number of <code>*const T@shared</code> borrows may coexist across threads without synchronization.</p>
+<pre><code><span class="kw">let</span> cfg: <span class="ty">Config</span><span class="op">@</span><span class="reg">shared</span> = load_config();   <span class="cm">// permanently immutable</span>
+<span class="kw">spawn</span> { print(cfg.timeout); }            <span class="cm">// ✓ no lock needed</span>
+<span class="kw">spawn</span> { print(cfg.retries); }            <span class="cm">// ✓ concurrent reads always safe</span></code></pre>
+
+<h3>Rule 3 — Guard lifetime is strictly the lock block</h3>
+<p>The guard produced by <code>lock(m) |g| { ... }</code> cannot be stored outside the block, returned from a function, or captured by a spawn. Any escape attempt is a compile error.</p>
+<pre><code><span class="kw">let</span> escaped;
+<span class="kw">lock</span>(m) |g| {
+    g.X += <span class="st">1</span>;       <span class="cm">// ✓</span>
+    escaped = g;     <span class="err">// ✗ guard cannot escape lock block</span>
+}
+
+<span class="kw">fn</span> <span class="fn">bad</span>() -> <span class="op">*</span><span class="ty">Point</span> {
+    <span class="kw">lock</span>(m) |g| { <span class="kw">return</span> g; }  <span class="err">// ✗ guard lifetime ends at `}`</span>
 }</code></pre>
 
-  <div class="box note">
-    <div class="box-title">Arena Drop</div>
-    <p>When a user-defined region exits scope, all drop hooks for values within it are called in reverse allocation order before the region's backing memory is freed. This gives arena-style performance with RAII-style correctness.</p>
-  </div>
+<h3>Rule 4 — Guard obeys normal alias rules inside the block</h3>
+<p>Inside a lock block, <code>g</code> has type <code>*T</code> and is the only live mutable alias to the inner value. Standard exclusivity applies — you cannot create a second mutable alias to <code>g</code>'s target.</p>
+<pre><code><span class="kw">lock</span>(m) |g| {
+    <span class="kw">let</span> alias = g;  <span class="err">// ✗ two live mutable aliases to inner value</span>
+}
+<span class="kw">lock</span>(m) |g| {
+    <span class="fn">inc</span>(g);   <span class="cm">// ✓ single alias, last-use tracked normally</span>
+    <span class="fn">inc</span>(g);   <span class="cm">// ✓ previous use was last; new borrow taken here</span>
+}</code></pre>
 
-  <hr>
+<h3>Rule 5 — Nested locks: no compile-time deadlock prevention</h3>
+<p>The compiler does not statically prevent deadlocks from nested or out-of-order locking. This is a deliberate tradeoff for v1.</p>
+<div class="box warn"><div class="bt">Deadlock Risk</div><p>Locking two mutexes in different orders on different threads produces a deadlock at runtime. Convention: always acquire multiple locks in a globally consistent order (e.g. by address). A future <code>lock_ordered!</code> macro may enforce this statically.</p></div>
+<pre><code><span class="cm">// Safe — consistent lock order on all threads</span>
+<span class="kw">lock</span>(m1) |g1| {
+    <span class="kw">lock</span>(m2) |g2| { g1.X = g2.Y; }  <span class="cm">// ✓ if all threads use m1-then-m2</span>
+}
+<span class="cm">// Thread A: lock(m1) then lock(m2)</span>
+<span class="cm">// Thread B: lock(m2) then lock(m1)  ← deadlock — compiler will NOT catch this</span></code></pre>
+<hr>
 
-  <!-- ── 10. UNSAFE ── -->
-  <h2 id="unsafe"><span class="section-num">14</span> Unsafe Blocks</h2>
-  <p>The <code>unsafe { ... }</code> block explicitly opts out of Forge's alias and move checking within that block. It is intended for FFI, hand-written allocators, and other cases where the programmer can prove safety by means outside the type system.</p>
+<h2 id="generics"><span class="sn">5</span> Generics &amp; Region Polymorphism</h2>
+<p>Regions are first-class type parameters. Functions can be generic over both value type <code>T</code> and region <code>R</code>. Region inference applies at call sites.</p>
+<pre><code><span class="kw">fn</span> <span class="fn">first</span>&lt;<span class="ty">T</span>, <span class="ty">R</span>&gt;(slice: <span class="op">*</span>[<span class="ty">T</span>]<span class="op">@</span><span class="ty">R</span>) -> <span class="op">*</span><span class="ty">T</span><span class="op">@</span><span class="ty">R</span> { <span class="kw">return</span> &amp;slice[<span class="st">0</span>]; }
 
-  <pre><code><span class="kw">unsafe</span> {
+<span class="kw">let</span> items: [<span class="ty">i32</span>]<span class="op">@</span><span class="reg">heap</span> = [<span class="st">1</span>, <span class="st">2</span>, <span class="st">3</span>];
+<span class="kw">let</span> x = <span class="fn">first</span>(items);  <span class="cm">// R inferred as heap</span></code></pre>
+
+<h2 id="constraints"><span class="sn">6</span> Constraints</h2>
+<p><code>constraint</code> is a keyword. Kind — region or type — is inferred from the RHS. Mixing region names and type/interface names on one RHS is a compile error. Applying a region constraint to a type parameter or vice versa is a compile error caught at the function definition.</p>
+<pre><code><span class="kw">constraint</span> <span class="ty">Allocable</span>  = <span class="reg">heap</span> | <span class="reg">stack</span>;            <span class="cm">// region constraint</span>
+<span class="kw">constraint</span> <span class="ty">Mutable</span>    = <span class="reg">heap</span> | <span class="reg">stack</span> | <span class="reg">tls</span>;    <span class="cm">// region constraint</span>
+<span class="kw">constraint</span> <span class="ty">ThreadSafe</span> = <span class="reg">shared</span> | <span class="reg">static</span>;        <span class="cm">// region constraint</span>
+<span class="kw">constraint</span> <span class="ty">Numeric</span>    = <span class="ty">i32</span> | <span class="ty">i64</span> | <span class="ty">f32</span> | <span class="ty">f64</span>; <span class="cm">// type constraint</span>
+<span class="kw">constraint</span> <span class="ty">Printable</span>  = <span class="ty">Stringer</span>;                <span class="cm">// type constraint (interface)</span>
+
+<span class="kw">fn</span> <span class="fn">clone</span>&lt;<span class="ty">T</span>, <span class="ty">R</span>: <span class="ty">Allocable</span>&gt;(p: <span class="op">*</span><span class="ty">T</span><span class="op">@</span><span class="ty">R</span>) -> <span class="ty">T</span><span class="op">@</span><span class="ty">R</span> { ... }  <span class="cm">// ✓ region constraint on region param</span>
+<span class="kw">fn</span> <span class="fn">sum</span>&lt;<span class="ty">T</span>: <span class="ty">Numeric</span>&gt;(a: <span class="ty">T</span>, b: <span class="ty">T</span>) -> <span class="ty">T</span>           { ... }  <span class="cm">// ✓ type constraint on type param</span>
+<span class="kw">fn</span> <span class="fn">bad1</span>&lt;<span class="ty">T</span>: <span class="ty">Allocable</span>&gt;(...) { ... }  <span class="err">// ✗ region constraint on type param</span>
+<span class="kw">fn</span> <span class="fn">bad2</span>&lt;<span class="ty">R</span>: <span class="ty">Numeric</span>&gt;(...)   { ... }  <span class="err">// ✗ type constraint on region param</span></code></pre>
+<hr>
+
+<h2 id="methods"><span class="sn">7</span> Methods</h2>
+<p>Methods use Go-style receiver syntax, declared outside the type definition. The compiler auto-takes a reference when calling a pointer-receiver method on a non-pointer value.</p>
+<pre><code><span class="kw">struct</span> <span class="ty">Point</span> { X: <span class="ty">f32</span>, Y: <span class="ty">f32</span> }
+
+<span class="kw">fn</span> (<span class="ty">Point</span>) <span class="fn">length</span>(self) -> <span class="ty">f32</span> {            <span class="cm">// value receiver — copy</span>
+    <span class="kw">return</span> sqrt(self.X*self.X + self.Y*self.Y);
+}
+<span class="kw">fn</span> (<span class="op">*</span><span class="ty">Point</span>) <span class="fn">scale</span>(self, f: <span class="ty">f32</span>) {            <span class="cm">// pointer receiver — mutates in place</span>
+    self.X *= f; self.Y *= f;
+}
+<span class="kw">fn</span> (<span class="op">*</span><span class="ty">Point</span><span class="op">@</span><span class="ty">R</span>) <span class="fn">translate</span>&lt;<span class="ty">R</span>: <span class="ty">Mutable</span>&gt;(self, dx: <span class="ty">f32</span>, dy: <span class="ty">f32</span>) {
+    self.X += dx; self.Y += dy;   <span class="cm">// works on heap, stack, tls — not static</span>
+}
+
+<span class="kw">let</span> p: <span class="ty">Point</span><span class="op">@</span><span class="reg">heap</span> = <span class="ty">Point</span>{ .X=<span class="st">3.0</span>, .Y=<span class="st">4.0</span> };
+p.<span class="fn">scale</span>(<span class="st">2.0</span>);   <span class="cm">// compiler auto-takes &amp;p — no manual &amp; needed</span></code></pre>
+
+<h2 id="interfaces"><span class="sn">7.1</span> Interfaces</h2>
+<p>Any type implementing all methods of an interface implicitly satisfies it. No <code>implements</code> keyword. Structural typing identical to Go. Interface values use dynamic dispatch (vtable); generic constraints use static dispatch (monomorphization).</p>
+<pre><code><span class="kw">interface</span> <span class="ty">Shape</span> {
+    <span class="kw">fn</span> <span class="fn">area</span>(self) -> <span class="ty">f32</span>;
+    <span class="kw">fn</span> <span class="fn">perimeter</span>(self) -> <span class="ty">f32</span>;
+}
+<span class="kw">struct</span> <span class="ty">Circle</span> { radius: <span class="ty">f32</span> }
+<span class="kw">fn</span> (<span class="ty">Circle</span>) <span class="fn">area</span>(self) -> <span class="ty">f32</span>      { <span class="kw">return</span> <span class="st">3.14159</span> * self.radius * self.radius; }
+<span class="kw">fn</span> (<span class="ty">Circle</span>) <span class="fn">perimeter</span>(self) -> <span class="ty">f32</span> { <span class="kw">return</span> <span class="st">2.0</span> * <span class="st">3.14159</span> * self.radius; }
+<span class="cm">// Circle implicitly satisfies Shape</span>
+
+<span class="kw">fn</span> <span class="fn">largest</span>&lt;<span class="ty">T</span>: <span class="ty">Shape</span>&gt;(items: [<span class="ty">T</span>]) -> <span class="ty">f32</span> { ... }  <span class="cm">// static dispatch</span>
+<span class="kw">fn</span> <span class="fn">print_area</span>(s: <span class="ty">Shape</span>)                  { ... }  <span class="cm">// dynamic dispatch</span></code></pre>
+
+<h2 id="receiver-regions"><span class="sn">7.2</span> Receiver Regions &amp; Interface Satisfaction</h2>
+<p>An interface method may specify a receiver region. If specified, only that region satisfies it. If omitted, any region satisfies it.</p>
+<pre><code><span class="kw">interface</span> <span class="ty">HeapMutator</span> { <span class="kw">fn</span> <span class="fn">reset</span>(<span class="op">*</span>self<span class="op">@</span><span class="reg">heap</span>); }  <span class="cm">// heap-only</span>
+<span class="kw">interface</span> <span class="ty">AnyMutator</span>  { <span class="kw">fn</span> <span class="fn">reset</span>(<span class="op">*</span>self);      }  <span class="cm">// any region satisfies</span></code></pre>
+<hr>
+
+<h2 id="lifetime-rules"><span class="sn">8</span> Formal Lifetime Rules</h2>
+<p>Alias liveness is determined by backward dataflow analysis on the CFG (full treatment in §EC2). An alias is live at a program point if a use can be reached from that point without passing through a kill. Dead otherwise.</p>
+
+<h2 id="conditionals"><span class="sn">8.1</span> Conditionals</h2>
+<div class="two">
+  <div><div class="lbl ok">✓ One-branch use — dead after block</div>
+<pre><code><span class="kw">let</span> a = &amp;p1;
+<span class="kw">if</span> cond { <span class="fn">inc</span>(a); }
+<span class="cm">// no future use — a dead</span>
+<span class="kw">let</span> b = &amp;p1;  <span class="cm">// ✓</span></code></pre></div>
+  <div><div class="lbl err">✗ New alias while live post-branch</div>
+<pre><code><span class="kw">let</span> a = &amp;p1;
+<span class="kw">if</span> cond {
+    <span class="fn">inc</span>(a);
+    <span class="kw">let</span> b = &amp;p1; <span class="err">// ✗ a live (used after if)</span>
+}
+<span class="fn">inc</span>(a);</code></pre></div>
+</div>
+
+<h2 id="loops"><span class="sn">8.2</span> Loops</h2>
+<div class="two">
+  <div><div class="lbl ok">✓ Unconditional break — back-edge dead</div>
+<pre><code><span class="kw">let</span> a = &amp;p1;
+<span class="kw">loop</span> { <span class="fn">inc</span>(a); <span class="kw">break</span>; }
+<span class="kw">let</span> b = &amp;p1;  <span class="cm">// ✓</span></code></pre></div>
+  <div><div class="lbl err">✗ Back-edge keeps alias live</div>
+<pre><code><span class="kw">let</span> a = &amp;p1;
+<span class="kw">loop</span> {
+    <span class="kw">if</span> f { <span class="fn">inc</span>(a); }
+    <span class="kw">let</span> b = &amp;p1; <span class="err">// ✗ back-edge reaches inc(a)</span>
+}</code></pre></div>
+</div>
+
+<h2 id="condmove"><span class="sn">8.3</span> Conditional Move Semantics</h2>
+<p>A value moved on any branch is marked <strong>possibly-moved</strong> after the join. Using it is a compile error unless resolved by one of three patterns. Forge never copies silently.</p>
+<pre><code><span class="cm">// 1. Move on all branches — definitively moved</span>
+<span class="kw">if</span> c { <span class="fn">consume</span>(p1); } <span class="kw">else</span> { <span class="fn">consume</span>(p1); }
+<span class="cm">// p1 definitively dead — any use is a compile error</span>
+
+<span class="cm">// 2. Reinitialize on the moving branch</span>
+<span class="kw">if</span> c { <span class="fn">consume</span>(p1); p1 = <span class="ty">Point</span>{ .X=<span class="st">0</span>, .Y=<span class="st">0</span> }; }
+<span class="fn">inc</span>(&amp;p1);  <span class="cm">// ✓ valid on both paths</span>
+
+<span class="cm">// 3. is_valid guard — runtime check for complex flow</span>
+<span class="kw">if</span> c { <span class="fn">consume</span>(p1); }
+<span class="kw">if</span> is_valid(p1) { <span class="fn">inc</span>(&amp;p1); }  <span class="cm">// ✓</span></code></pre>
+<hr>
+
+<h2 id="shared"><span class="sn">9</span> Shared Regions &amp; Concurrency</h2>
+<p>The <code>shared</code> region is cross-thread accessible. Immutable access needs no synchronization. Mutable access requires <code>Mutex&lt;T&gt;</code>. Raw mutable borrows into <code>shared</code> are forbidden (§EC3 Rule 1). Guard lifetime is strictly the lock block (§EC3 Rule 3).</p>
+
+<h2 id="locks"><span class="sn">9.1</span> Value-Level Locking</h2>
+<pre><code><span class="kw">let</span> m: <span class="ty">Mutex</span>&lt;<span class="ty">Point</span>&gt;<span class="op">@</span><span class="reg">shared</span> = <span class="ty">Mutex</span>::new(<span class="ty">Point</span>{ .X=<span class="st">0</span>, .Y=<span class="st">0</span> });
+<span class="kw">lock</span>(m) |g| {
+    g.X += <span class="st">1</span>;   <span class="cm">// g: *Point — exclusive mutable access</span>
+}               <span class="cm">// mutex released; g lifetime ends</span></code></pre>
+
+<h2 id="parallel"><span class="sn">9.2</span> Parallel Safety</h2>
+<div class="two">
+  <div><div class="lbl ok">✓ Independent values</div>
+<pre><code><span class="kw">spawn</span> { <span class="fn">inc</span>(&amp;p1); }
+<span class="kw">spawn</span> { <span class="fn">inc</span>(&amp;p2); }  <span class="cm">// ✓</span></code></pre></div>
+  <div><div class="lbl err">✗ Same value — data race</div>
+<pre><code><span class="kw">spawn</span> { <span class="fn">inc</span>(&amp;p1); }
+<span class="kw">spawn</span> { <span class="fn">inc</span>(&amp;p1); }  <span class="err">// ✗</span></code></pre></div>
+</div>
+<hr>
+
+<h2 id="destruction"><span class="sn">10</span> Destruction &amp; Drop Hooks</h2>
+<p>Values are destroyed explicitly via <code>destroy</code> or implicitly on scope exit. A custom drop hook runs before deallocation. For user-defined arena regions, hooks fire in reverse allocation order before backing memory is freed.</p>
+<pre><code><span class="kw">impl</span> <span class="ty">Drop</span> <span class="kw">for</span> <span class="ty">FileHandle</span> {
+    <span class="kw">fn</span> <span class="fn">drop</span>(self: <span class="op">*</span><span class="ty">FileHandle</span>) { close_fd(self.fd); }
+}
+{
+    <span class="kw">let</span> f: <span class="ty">FileHandle</span> = open(<span class="st">"data.bin"</span>);
+}  <span class="cm">// drop hook fires here — fd closed before stack frame is popped</span></code></pre>
+<hr>
+
+<h2 id="unsafe"><span class="sn">11</span> Unsafe Blocks</h2>
+<p><code>unsafe { ... }</code> opts out of alias and move checking within the block. Values crossing the unsafe/safe boundary must satisfy all normal alias and region rules at the crossing point.</p>
+<pre><code><span class="kw">unsafe</span> {
     <span class="kw">let</span> raw: <span class="op">*</span><span class="ty">u8</span><span class="op">@</span><span class="reg">heap</span> = raw_alloc(<span class="st">64</span>);
-    <span class="cm">// No alias or lifetime tracking within this block</span>
-    <span class="cm">// Programmer is responsible for correctness</span>
     raw_free(raw);
-}</code></pre>
+}  <span class="cm">// `raw` cannot be used outside — all rules apply at the boundary</span></code></pre>
+<hr>
 
-  <div class="box error">
-    <div class="box-title">Unsafe Boundary Rule</div>
-    <p>An <code>unsafe</code> block may not expose raw pointers or untracked aliases to safe code. Any value crossing the <code>unsafe</code>/<code>safe</code> boundary must satisfy all normal alias and region rules at the point of crossing.</p>
-  </div>
+<h2 id="grammar"><span class="sn">12</span> Grammar Reference</h2>
+<h3>Type Syntax</h3>
+<div class="grammar">type          ::= base_type ("@" region)?          -- defaults to @stack when omitted
+base_type     ::= ident
+               |  "*" base_type                    -- mutable borrow
+               |  "*const" base_type               -- immutable borrow
+               |  "[" type "]"                     -- slice
+               |  "Mutex<" type ">"
+region        ::= "heap" | "stack" | "static" | "tls" | "shared" | ident</div>
 
-  <hr>
-
-  <!-- ── 11. GRAMMAR ── -->
-  <h2 id="grammar"><span class="section-num">15</span> Grammar Quick Reference</h2>
-
-  <h3>Type Syntax</h3>
-  <div class="grammar">
-type      ::= base_type ("@" region)?   -- region defaults to stack
-base_type ::= ident | "*" base_type | "*const" base_type | "[" type "]" | "Mutex<" type ">"
-region    ::= "heap" | "stack" | "static" | "tls" | "shared" | ident
-  </div>
-
-  <h3>Constraint Declarations</h3>
-  <div class="grammar">
-constraint_decl ::= "constraint" ident "=" constraint_rhs ";"
+<h3>Constraint Declarations</h3>
+<div class="grammar">constraint_decl ::= "constraint" ident "=" constraint_rhs ";"
 constraint_rhs  ::= constraint_item ("|" constraint_item)*
-constraint_item ::= region           -- region constraint (cannot mix with type below)
-                  | type_ident       -- type constraint
-                  | interface_ident  -- type constraint
-  </div>
+constraint_item ::= region           -- region constraint (cannot mix with types)
+                 |  type_ident       -- type constraint
+                 |  iface_ident      -- type constraint</div>
 
-  <h3>Method and Interface Syntax</h3>
-  <div class="grammar">
-method_decl  ::= "fn" "(" receiver ")" ident ("<" type_params ">")?  "(" params ")" ("->" type)? block
-receiver     ::= type | "*" type | "*const" type
+<h3>Method &amp; Interface Syntax</h3>
+<div class="grammar">method_decl  ::= "fn" "(" receiver ")" ident ("<" type_params ">")? "(" params ")" ("->" type)? block
+receiver     ::= type | "*" type | "*const" type   -- default region is stack
 iface_decl   ::= "interface" ident "{" iface_method* "}"
-iface_method ::= "fn" ident "(" receiver_sig ("," params)? ")" ("->" type)? ";"
-  </div>
+iface_method ::= "fn" ident "(" receiver_sig ("," param)* ")" ("->" type)? ";"</div>
 
-  <h3>Function Syntax</h3>
-  <div class="grammar">
-fn_decl    ::= "fn" ident ("<" type_params ">")?  "(" params ")" ("->" type)? block
-type_params::= type_param ("," type_param)*
-type_param ::= ident (":" constraint_ref)?
-constraint_ref ::= ident | region ("|" region)* | type_ident ("|" type_ident)*
-  </div>
+<h3>Function &amp; Statement Syntax</h3>
+<div class="grammar">fn_decl        ::= "fn" ident ("<" type_params ">")? "(" params ")" ("->" type)? block
+type_param     ::= ident (":" constraint_ref)?
+constraint_ref ::= ident                            -- named constraint
+                |  region ("|" region)*             -- inline region constraint
+                |  type_ident ("|" type_ident)*     -- inline type constraint
 
-  <h3>Statement Syntax</h3>
-  <div class="grammar">
-let_stmt    ::= "let" ident (":" type)? "=" expr ";"
-destroy     ::= "destroy" ident ";"
-lock_stmt   ::= "lock" "(" expr ")" "|" ident "|" block
-spawn_stmt  ::= "spawn" block
-unsafe_blk  ::= "unsafe" block
-region_decl ::= "region" ident (":" region)? ";"
-  </div>
+let_stmt       ::= "let" ident (":" type)? "=" expr ";"
+destroy_stmt   ::= "destroy" ident ";"
+lock_stmt      ::= "lock" "(" expr ")" "|" ident "|" block
+spawn_stmt     ::= "spawn" block
+unsafe_blk     ::= "unsafe" block
+region_decl    ::= "region" ident (":" region)? ";"</div>
+<hr>
 
-  <hr>
-
-  <!-- ── SUMMARY ── -->
-  <h2><span class="section-num">16</span> Summary</h2>
-
-  <table>
-    <tr><th>Concept</th><th>Syntax</th><th>Guarantee</th></tr>
-    <tr><td>Default region</td><td><code>T</code> (no annotation)</td><td>Treated as <code>T@stack</code>; explicit overrides with <code>@R</code></td></tr>
-    <tr><td>Owned value in region R</td><td><code>T@R</code></td><td>Exclusive ownership; move invalidates aliases</td></tr>
-    <tr><td>Mutable borrow</td><td><code>*T@R</code></td><td>Exclusive; last-use tracked by compiler</td></tr>
-    <tr><td>Immutable borrow</td><td><code>*const T@R</code></td><td>Shared; coexists with other immutable borrows</td></tr>
-    <tr><td>Region constraint</td><td><code>constraint C = r1 | r2</code></td><td>Region-only; compile error if applied to type param</td></tr>
-    <tr><td>Type constraint</td><td><code>constraint C = T1 | T2</code></td><td>Type-only; compile error if applied to region param</td></tr>
-    <tr><td>Region polymorphism</td><td><code>&lt;T, R: RegionConstraint&gt;</code></td><td>Safe across regions; constrained at definition</td></tr>
-    <tr><td>Type polymorphism</td><td><code>&lt;T: TypeConstraint&gt;</code></td><td>Monomorphized; interface-constrained generics</td></tr>
-    <tr><td>Methods</td><td><code>fn (T) name(self)</code> / <code>fn (*T) name(self)</code></td><td>Go-style receiver; auto-reference for pointer receivers</td></tr>
-    <tr><td>Interfaces</td><td><code>interface I { fn m(self) }</code></td><td>Implicit satisfaction; structural typing</td></tr>
-    <tr><td>Static dispatch</td><td><code>fn f&lt;T: Interface&gt;(...)</code></td><td>Monomorphized at compile time</td></tr>
-    <tr><td>Dynamic dispatch</td><td><code>fn f(x: Interface)</code></td><td>vtable; runtime resolution</td></tr>
-    <tr><td>Sequential aliases</td><td>RAII last-use</td><td>No explicit scoping needed for safe sequential mutation</td></tr>
-    <tr><td>Conditional move</td><td>Reinit or <code>is_valid</code></td><td>Compiler rejects unhandled possibly-moved values</td></tr>
-    <tr><td>Shared mutation</td><td><code>Mutex&lt;T&gt;@shared</code> + <code>lock</code></td><td>Value-level locking; data race free at compile time</td></tr>
-    <tr><td>Parallel safety</td><td>Compile-time exclusivity</td><td>Two spawns cannot hold mutable refs to same value</td></tr>
-    <tr><td>Custom drop</td><td><code>impl Drop for T</code></td><td>Runs before deallocation; arena-safe</td></tr>
-    <tr><td>Escape hatch</td><td><code>unsafe { }</code></td><td>Boundary rule enforced; interior unchecked</td></tr>
-  </table>
-
+<h2 id="summary"><span class="sn">13</span> Summary</h2>
+<table>
+  <tr><th>Concept</th><th>Syntax</th><th>Guarantee</th></tr>
+  <tr><td>Default region</td><td><code>T</code></td><td>Treated as <code>T@stack</code>; <code>@R</code> overrides</td></tr>
+  <tr><td>Owned value</td><td><code>T@R</code></td><td>Exclusive; move invalidates all aliases</td></tr>
+  <tr><td>Mutable borrow</td><td><code>*T@R</code></td><td>One live at a time; liveness by CFG dataflow</td></tr>
+  <tr><td>Immutable borrow</td><td><code>*const T@R</code></td><td>Many coexist; not alongside mutable</td></tr>
+  <tr><td>Cross-region move</td><td><code>let s: T@stack = h;</code></td><td>Dual enforcement: invalidation + type incompatibility; matrix governs legality</td></tr>
+  <tr><td>Liveness</td><td>CFG backward dataflow</td><td>Precise across all control-flow shapes</td></tr>
+  <tr><td>Raw shared mutable</td><td><code>*T@shared</code></td><td>Forbidden; must use <code>Mutex&lt;T&gt;</code></td></tr>
+  <tr><td>Lock guard</td><td><code>lock(m) |g| { }</code></td><td>Lifetime strictly bound to block; cannot escape</td></tr>
+  <tr><td>Region constraint</td><td><code>constraint C = r1 | r2</code></td><td>Region-only; error if applied to type param</td></tr>
+  <tr><td>Type constraint</td><td><code>constraint C = T1 | T2</code></td><td>Type-only; error if applied to region param</td></tr>
+  <tr><td>Methods</td><td><code>fn (T) m(self)</code></td><td>Go-style; auto-reference for pointer receivers</td></tr>
+  <tr><td>Interfaces</td><td><code>interface I { fn m(self) }</code></td><td>Implicit structural satisfaction</td></tr>
+  <tr><td>Static dispatch</td><td><code>fn f&lt;T: I&gt;()</code></td><td>Monomorphized at compile time</td></tr>
+  <tr><td>Dynamic dispatch</td><td><code>fn f(x: I)</code></td><td>vtable; runtime resolution</td></tr>
+  <tr><td>Conditional move</td><td>Reinit or <code>is_valid</code></td><td>No implicit copies; unresolved = compile error</td></tr>
+  <tr><td>Parallel safety</td><td>Compile-time exclusivity</td><td>Two spawns cannot hold mutable refs to same value</td></tr>
+  <tr><td>Drop hooks</td><td><code>impl Drop for T</code></td><td>Fires before dealloc; arena-ordered</td></tr>
+  <tr><td>Escape hatch</td><td><code>unsafe { }</code></td><td>Boundary enforced; interior unchecked</td></tr>
+</table>
 </main>
 </div>
 </body>
