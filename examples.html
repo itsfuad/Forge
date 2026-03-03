@@ -4,76 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Forge — Example Programs</title>
-<style>
-  :root {
-    --bg:#0f1117;--surface:#181c27;--surface2:#1e2333;--border:#2a3050;
-    --accent:#5b8ef0;--accent2:#a78bfa;--green:#4ade80;--red:#f87171;
-    --yellow:#fbbf24;--text:#e2e8f0;--muted:#8892a4;--code-bg:#12151f;
-    --orange:#fb923c;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7}
-
-  /* ── layout ── */
-  .page{max-width:860px;margin:0 auto;padding:3rem 2rem 5rem}
-
-  /* ── header ── */
-  .header{margin-bottom:3rem}
-  .header h1{font-size:2rem;font-weight:800;color:var(--accent);letter-spacing:.02em}
-  .header p{color:var(--muted);margin-top:.35rem}
-  .badge{display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.15rem .6rem;font-size:.75rem;color:var(--muted);margin-right:.4rem;margin-top:.5rem}
-
-  /* ── tabs ── */
-  .tabs{display:flex;gap:.5rem;margin-bottom:2.5rem;flex-wrap:wrap}
-  .tab{padding:.45rem 1.1rem;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-size:.85rem;font-weight:500;transition:all .15s}
-  .tab:hover{border-color:var(--accent);color:var(--text)}
-  .tab.active{background:var(--accent);color:#0f1117;border-color:var(--accent);font-weight:700}
-
-  /* ── example panels ── */
-  .example{display:none}
-  .example.active{display:block}
-
-  .ex-header{margin-bottom:1.5rem}
-  .ex-header h2{font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:.3rem}
-  .ex-header p{color:var(--muted);font-size:.9rem;max-width:620px}
-
-  /* ── code block ── */
-  .code-wrap{position:relative;margin-bottom:1.5rem}
-  .code-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem}
-  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:1.4rem 1.6rem;overflow-x:auto;font-size:.88rem;line-height:1.7;counter-reset:line}
-  code{font-family:'Cascadia Code','Fira Code','Consolas',monospace;color:#c9d1d9}
-
-  /* syntax */
-  .kw {color:#a78bfa;font-weight:600}
-  .ty {color:#67e8f9}
-  .fn {color:#86efac}
-  .cm {color:#505a6e;font-style:italic}
-  .st {color:#fbbf24}
-  .nm {color:#f9a8d4}
-  .op {color:#94a3b8}
-  .reg{color:#fb923c}
-  .bi {color:#7dd3fc}  /* builtins */
-
-  /* ── annotation callouts ── */
-  .callouts{display:flex;flex-direction:column;gap:.6rem;margin-bottom:2rem}
-  .callout{display:flex;gap:.75rem;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.7rem 1rem;font-size:.84rem}
-  .callout .icon{font-size:1rem;margin-top:.05rem;flex-shrink:0}
-  .callout strong{color:var(--text)}
-  .callout span{color:var(--muted)}
-
-  /* ── output box ── */
-  .output{background:#0a0e15;border:1px solid var(--border);border-radius:10px;padding:1rem 1.4rem;font-family:'Cascadia Code','Fira Code',monospace;font-size:.84rem;color:var(--green);margin-bottom:1.5rem}
-  .output-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem}
-  .output .prompt{color:var(--muted)}
-
-  /* ── section divider ── */
-  .divider{border:none;border-top:1px solid var(--border);margin:2rem 0}
-
-  p code{background:var(--surface2);padding:.1rem .35rem;border-radius:4px;font-size:.83em;color:#c9d1d9;font-family:'Cascadia Code','Fira Code',monospace}
-</style>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="page">
+
+  <a class="back-link" href="index.html">&#8592; Language Specification</a>
 
   <div class="header">
     <h1>&#9874; Forge — Example Programs</h1>
@@ -87,10 +23,10 @@
 
   <!-- TABS -->
   <div class="tabs">
-    <div class="tab active" onclick="show('hello')">Hello World</div>
-    <div class="tab" onclick="show('factorial')">Factorial</div>
-    <div class="tab" onclick="show('gcd')">GCD Calculator</div>
-    <div class="tab" onclick="show('shapes')">Structs &amp; Interfaces</div>
+    <button class="tab active" onclick="show('hello',this)">Hello World</button>
+    <button class="tab" onclick="show('factorial',this)">Factorial</button>
+    <button class="tab" onclick="show('gcd',this)">GCD Calculator</button>
+    <button class="tab" onclick="show('shapes',this)">Structs &amp; Interfaces</button>
   </div>
 
   <!-- ══════════════════════════════════════════
@@ -457,11 +393,11 @@
 </div>
 
 <script>
-  function show(name) {
+  function show(name, el) {
     document.querySelectorAll('.example').forEach(e => e.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById('ex-' + name).classList.add('active');
-    event.target.classList.add('active');
+    el.classList.add('active');
   }
 </script>
 </body>
