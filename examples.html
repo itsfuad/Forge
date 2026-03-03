@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forge — Example Programs</title>
+<style>
+  :root {
+    --bg:#0f1117;--surface:#181c27;--surface2:#1e2333;--border:#2a3050;
+    --accent:#5b8ef0;--accent2:#a78bfa;--green:#4ade80;--red:#f87171;
+    --yellow:#fbbf24;--text:#e2e8f0;--muted:#8892a4;--code-bg:#12151f;
+    --orange:#fb923c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7}
+
+  /* ── layout ── */
+  .page{max-width:860px;margin:0 auto;padding:3rem 2rem 5rem}
+
+  /* ── header ── */
+  .header{margin-bottom:3rem}
+  .header h1{font-size:2rem;font-weight:800;color:var(--accent);letter-spacing:.02em}
+  .header p{color:var(--muted);margin-top:.35rem}
+  .badge{display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.15rem .6rem;font-size:.75rem;color:var(--muted);margin-right:.4rem;margin-top:.5rem}
+
+  /* ── tabs ── */
+  .tabs{display:flex;gap:.5rem;margin-bottom:2.5rem;flex-wrap:wrap}
+  .tab{padding:.45rem 1.1rem;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-size:.85rem;font-weight:500;transition:all .15s}
+  .tab:hover{border-color:var(--accent);color:var(--text)}
+  .tab.active{background:var(--accent);color:#0f1117;border-color:var(--accent);font-weight:700}
+
+  /* ── example panels ── */
+  .example{display:none}
+  .example.active{display:block}
+
+  .ex-header{margin-bottom:1.5rem}
+  .ex-header h2{font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:.3rem}
+  .ex-header p{color:var(--muted);font-size:.9rem;max-width:620px}
+
+  /* ── code block ── */
+  .code-wrap{position:relative;margin-bottom:1.5rem}
+  .code-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem}
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:1.4rem 1.6rem;overflow-x:auto;font-size:.88rem;line-height:1.7;counter-reset:line}
+  code{font-family:'Cascadia Code','Fira Code','Consolas',monospace;color:#c9d1d9}
+
+  /* syntax */
+  .kw {color:#a78bfa;font-weight:600}
+  .ty {color:#67e8f9}
+  .fn {color:#86efac}
+  .cm {color:#505a6e;font-style:italic}
+  .st {color:#fbbf24}
+  .nm {color:#f9a8d4}
+  .op {color:#94a3b8}
+  .reg{color:#fb923c}
+  .bi {color:#7dd3fc}  /* builtins */
+
+  /* ── annotation callouts ── */
+  .callouts{display:flex;flex-direction:column;gap:.6rem;margin-bottom:2rem}
+  .callout{display:flex;gap:.75rem;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.7rem 1rem;font-size:.84rem}
+  .callout .icon{font-size:1rem;margin-top:.05rem;flex-shrink:0}
+  .callout strong{color:var(--text)}
+  .callout span{color:var(--muted)}
+
+  /* ── output box ── */
+  .output{background:#0a0e15;border:1px solid var(--border);border-radius:10px;padding:1rem 1.4rem;font-family:'Cascadia Code','Fira Code',monospace;font-size:.84rem;color:var(--green);margin-bottom:1.5rem}
+  .output-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem}
+  .output .prompt{color:var(--muted)}
+
+  /* ── section divider ── */
+  .divider{border:none;border-top:1px solid var(--border);margin:2rem 0}
+
+  p code{background:var(--surface2);padding:.1rem .35rem;border-radius:4px;font-size:.83em;color:#c9d1d9;font-family:'Cascadia Code','Fira Code',monospace}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <h1>&#9874; Forge — Example Programs</h1>
+    <p>Annotated code samples demonstrating Forge's memory model, ownership, and interface system.</p>
+    <div>
+      <span class="badge">v0.2-draft</span>
+      <span class="badge">Region-Owned</span>
+      <span class="badge">Compile-time safe</span>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="show('hello')">Hello World</div>
+    <div class="tab" onclick="show('factorial')">Factorial</div>
+    <div class="tab" onclick="show('gcd')">GCD Calculator</div>
+    <div class="tab" onclick="show('shapes')">Structs &amp; Interfaces</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       1. HELLO WORLD
+  ══════════════════════════════════════════ -->
+  <div class="example active" id="ex-hello">
+    <div class="ex-header">
+      <h2>Hello, World</h2>
+      <p>The minimal Forge program. Demonstrates the entry point, a string literal, a stack-allocated value, and the built-in <code>print</code> function.</p>
+    </div>
+
+    <div class="code-label">main.forge</div>
+    <pre><code><span class="cm">// Every Forge program starts at `main`.</span>
+<span class="cm">// No return type = implicitly returns nothing (unit).</span>
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="bi">print</span>(<span class="st">"Hello, World!"</span>);
+}
+</code></pre>
+
+    <div class="output-label">Output</div>
+    <div class="output"><span class="prompt">$ </span>forge run main.forge<br>Hello, World!</div>
+
+    <div class="callouts">
+      <div class="callout"><div class="icon">&#128204;</div><div><strong>No region annotation needed.</strong> <span>String literals are <code>@static</code> — they live for the program's lifetime. The compiler infers this; you never write it.</span></div></div>
+      <div class="callout"><div class="icon">&#128204;</div><div><strong>No heap allocation.</strong> <span>Nothing dynamic happens here. The string is a pointer into read-only program memory.</span></div></div>
+    </div>
+
+    <hr class="divider">
+    <div class="code-label">extended — variables and formatted output</div>
+    <pre><code><span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="cm">// Type annotation omitted — defaults to str@static</span>
+    <span class="kw">let</span> lang = <span class="st">"Forge"</span>;
+
+    <span class="cm">// i32 with no region annotation = i32@stack</span>
+    <span class="kw">let</span> year: <span class="ty">i32</span> = <span class="nm">2025</span>;
+
+    <span class="bi">print</span>(<span class="st">"Hello from {} ({})"</span>, lang, year);
+
+    <span class="cm">// Mutable stack variable</span>
+    <span class="kw">let</span> count: <span class="ty">i32</span> = <span class="nm">0</span>;
+    count += <span class="nm">1</span>;
+    <span class="bi">print</span>(<span class="st">"count is now {}"</span>, count);
+}
+</code></pre>
+
+    <div class="output-label">Output</div>
+    <div class="output">Hello from Forge (2025)<br>count is now 1</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       2. FACTORIAL
+  ══════════════════════════════════════════ -->
+  <div class="example" id="ex-factorial">
+    <div class="ex-header">
+      <h2>Factorial</h2>
+      <p>Two implementations — recursive and iterative — showing function definitions, branching, and basic arithmetic. Also demonstrates passing values vs. pointers.</p>
+    </div>
+
+    <div class="code-label">factorial_recursive.forge</div>
+    <pre><code><span class="cm">// Recursive factorial.</span>
+<span class="cm">// Parameters with no region = @stack by default.</span>
+<span class="kw">fn</span> <span class="fn">factorial</span>(n: <span class="ty">u64</span>) -> <span class="ty">u64</span> {
+    <span class="kw">if</span> n <= <span class="nm">1</span> {
+        <span class="kw">return</span> <span class="nm">1</span>;
+    }
+    <span class="kw">return</span> n * <span class="fn">factorial</span>(n - <span class="nm">1</span>);
+}
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> n: <span class="ty">u64</span> = <span class="nm">10</span>;
+    <span class="kw">let</span> result = <span class="fn">factorial</span>(n);   <span class="cm">// n is copied — u64 is a value type</span>
+    <span class="bi">print</span>(<span class="st">"{}! = {}"</span>, n, result);
+}
+</code></pre>
+
+    <div class="output-label">Output</div>
+    <div class="output">10! = 3628800</div>
+
+    <hr class="divider">
+
+    <div class="code-label">factorial_iterative.forge</div>
+    <pre><code><span class="cm">// Iterative factorial with a mutable accumulator.</span>
+<span class="kw">fn</span> <span class="fn">factorial</span>(n: <span class="ty">u64</span>) -> <span class="ty">u64</span> {
+    <span class="kw">let</span> result: <span class="ty">u64</span> = <span class="nm">1</span>;   <span class="cm">// u64@stack</span>
+    <span class="kw">let</span> i: <span class="ty">u64</span>      = <span class="nm">2</span>;
+
+    <span class="kw">loop</span> {
+        <span class="kw">if</span> i > n { <span class="kw">break</span>; }
+        result *= i;
+        i += <span class="nm">1</span>;
+    }
+
+    <span class="kw">return</span> result;
+}
+
+<span class="cm">// Accumulate a table of factorials, stored on the heap.</span>
+<span class="kw">fn</span> <span class="fn">factorial_table</span>(max: <span class="ty">u64</span>) -> [<span class="ty">u64</span>]<span class="op">@</span><span class="reg">heap</span> {
+    <span class="kw">let</span> table: [<span class="ty">u64</span>]<span class="op">@</span><span class="reg">heap</span> = alloc(<span class="ty">u64</span>, max + <span class="nm">1</span>);
+    <span class="kw">let</span> i: <span class="ty">u64</span> = <span class="nm">0</span>;
+    <span class="kw">loop</span> {
+        <span class="kw">if</span> i > max { <span class="kw">break</span>; }
+        table[i] = <span class="fn">factorial</span>(i);
+        i += <span class="nm">1</span>;
+    }
+    <span class="kw">return</span> table;   <span class="cm">// ownership moves to caller — no copy</span>
+}
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> tbl = <span class="fn">factorial_table</span>(<span class="nm">10</span>);   <span class="cm">// owns [u64]@heap</span>
+    <span class="kw">let</span> i: <span class="ty">u64</span> = <span class="nm">0</span>;
+    <span class="kw">loop</span> {
+        <span class="kw">if</span> i > <span class="nm">10</span> { <span class="kw">break</span>; }
+        <span class="bi">print</span>(<span class="st">"{}! = {}"</span>, i, tbl[i]);
+        i += <span class="nm">1</span>;
+    }
+    destroy tbl;   <span class="cm">// explicit dealloc — heap memory freed here</span>
+}
+</code></pre>
+
+    <div class="output-label">Output</div>
+    <div class="output">0! = 1<br>1! = 1<br>2! = 2<br>3! = 6<br>4! = 24<br>5! = 120<br>6! = 720<br>7! = 5040<br>8! = 40320<br>9! = 362880<br>10! = 3628800</div>
+
+    <div class="callouts">
+      <div class="callout"><div class="icon">&#128204;</div><div><strong>Return transfers ownership.</strong> <span><code>factorial_table</code> returns a <code>[u64]@heap</code>. The heap allocation is not copied — its ownership moves to the caller. The function's local binding <code>table</code> is invalidated on <code>return</code>.</span></div></div>
+      <div class="callout"><div class="icon">&#128204;</div><div><strong>Explicit destroy.</strong> <span>Heap values must be explicitly <code>destroy</code>-ed or moved. The compiler will warn on any heap value that goes out of scope without being destroyed or returned.</span></div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       3. GCD
+  ══════════════════════════════════════════ -->
+  <div class="example" id="ex-gcd">
+    <div class="ex-header">
+      <h2>GCD Calculator</h2>
+      <p>Euclidean algorithm in two forms. Also shows a mutable-pointer version that updates a result in place, demonstrating <code>*T</code> borrow semantics.</p>
+    </div>
+
+    <div class="code-label">gcd.forge</div>
+    <pre><code><span class="cm">// Classic Euclidean GCD — pure value semantics.</span>
+<span class="cm">// Both parameters are u64@stack (default).</span>
+<span class="kw">fn</span> <span class="fn">gcd</span>(a: <span class="ty">u64</span>, b: <span class="ty">u64</span>) -> <span class="ty">u64</span> {
+    <span class="kw">loop</span> {
+        <span class="kw">if</span> b == <span class="nm">0</span> { <span class="kw">return</span> a; }
+        <span class="kw">let</span> tmp = b;
+        b = a % b;
+        a = tmp;
+    }
+}
+
+<span class="cm">// LCM derived from GCD — shows composing pure functions.</span>
+<span class="kw">fn</span> <span class="fn">lcm</span>(a: <span class="ty">u64</span>, b: <span class="ty">u64</span>) -> <span class="ty">u64</span> {
+    <span class="kw">return</span> (a / <span class="fn">gcd</span>(a, b)) * b;   <span class="cm">// divide first to avoid overflow</span>
+}
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> pairs: [<span class="ty">u64</span>] = [<span class="nm">48</span>, <span class="nm">18</span>,  <span class="nm">100</span>, <span class="nm">75</span>,  <span class="nm">0</span>, <span class="nm">7</span>,  <span class="nm">13</span>, <span class="nm">7</span>];
+    <span class="kw">let</span> i: <span class="ty">u64</span> = <span class="nm">0</span>;
+
+    <span class="kw">loop</span> {
+        <span class="kw">if</span> i >= <span class="nm">8</span> { <span class="kw">break</span>; }
+        <span class="kw">let</span> a = pairs[i];
+        <span class="kw">let</span> b = pairs[i + <span class="nm">1</span>];
+        <span class="bi">print</span>(<span class="st">"gcd({}, {}) = {}  lcm = {}"</span>, a, b, <span class="fn">gcd</span>(a, b), <span class="fn">lcm</span>(a, b));
+        i += <span class="nm">2</span>;
+    }
+}
+</code></pre>
+
+    <div class="output-label">Output</div>
+    <div class="output">gcd(48, 18) = 6  lcm = 144<br>gcd(100, 75) = 25  lcm = 300<br>gcd(0, 7) = 7  lcm = 0<br>gcd(13, 7) = 1  lcm = 91</div>
+
+    <hr class="divider">
+
+    <div class="code-label">gcd_inplace.forge — pointer receiver demo</div>
+    <pre><code><span class="cm">// In-place version: result is written through a mutable pointer.</span>
+<span class="cm">// Shows *T@stack borrow — caller keeps ownership of `out`.</span>
+<span class="kw">fn</span> <span class="fn">gcd_into</span>(a: <span class="ty">u64</span>, b: <span class="ty">u64</span>, out: <span class="op">*</span><span class="ty">u64</span>) {
+    <span class="kw">loop</span> {
+        <span class="kw">if</span> b == <span class="nm">0</span> { <span class="op">*</span>out = a; <span class="kw">return</span>; }
+        <span class="kw">let</span> tmp = b;
+        b = a % b;
+        a = tmp;
+    }
+}
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> result: <span class="ty">u64</span> = <span class="nm">0</span>;   <span class="cm">// u64@stack — lives here</span>
+
+    <span class="fn">gcd_into</span>(<span class="nm">56</span>, <span class="nm">98</span>, &amp;result); <span class="cm">// mutable borrow of `result`</span>
+                               <span class="cm">// borrow ends after this call</span>
+    <span class="bi">print</span>(<span class="st">"gcd = {}"</span>, result);  <span class="cm">// ✓ result is valid — borrow is over</span>
+}
+</code></pre>
+
+    <div class="output-label">Output</div>
+    <div class="output">gcd = 14</div>
+
+    <div class="callouts">
+      <div class="callout"><div class="icon">&#128204;</div><div><strong>Borrow ends at last use.</strong> <span>The mutable borrow <code>&amp;result</code> passed to <code>gcd_into</code> is dead the moment the call returns. The <code>print</code> on the next line reads <code>result</code> directly — no conflict.</span></div></div>
+      <div class="callout"><div class="icon">&#128204;</div><div><strong><code>*out = a</code> dereferences to write.</strong> <span>Inside <code>gcd_into</code>, <code>out</code> is a <code>*u64@stack</code>. Writing through it with <code>*out = a</code> is a normal mutable-pointer write — no unsafe block needed.</span></div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       4. STRUCTS & INTERFACES
+  ══════════════════════════════════════════ -->
+  <div class="example" id="ex-shapes">
+    <div class="ex-header">
+      <h2>Structs &amp; Interfaces</h2>
+      <p>A geometry system with two shapes, a shared <code>Shape</code> interface, Go-style method receivers, and both static and dynamic dispatch.</p>
+    </div>
+
+    <div class="code-label">shapes.forge — type definitions</div>
+    <pre><code><span class="cm">// ── Structs ──────────────────────────────────────────</span>
+
+<span class="kw">struct</span> <span class="ty">Circle</span> {
+    radius: <span class="ty">f64</span>,
+}
+
+<span class="kw">struct</span> <span class="ty">Rect</span> {
+    width:  <span class="ty">f64</span>,
+    height: <span class="ty">f64</span>,
+}
+
+<span class="cm">// ── Interface ─────────────────────────────────────────</span>
+<span class="cm">// Any type with `area` and `perimeter` methods satisfies Shape.</span>
+<span class="cm">// No `implements` keyword — satisfaction is implicit.</span>
+
+<span class="kw">interface</span> <span class="ty">Shape</span> {
+    <span class="kw">fn</span> <span class="fn">area</span>(self) -> <span class="ty">f64</span>;
+    <span class="kw">fn</span> <span class="fn">perimeter</span>(self) -> <span class="ty">f64</span>;
+    <span class="kw">fn</span> <span class="fn">describe</span>(self) -> <span class="ty">str</span>;
+}
+
+<span class="cm">// ── Methods on Circle ─────────────────────────────────</span>
+<span class="cm">// Value receiver: `self` is a copy of the Circle.</span>
+
+<span class="kw">fn</span> (<span class="ty">Circle</span>) <span class="fn">area</span>(self) -> <span class="ty">f64</span> {
+    <span class="kw">return</span> <span class="nm">3.14159265</span> * self.radius * self.radius;
+}
+
+<span class="kw">fn</span> (<span class="ty">Circle</span>) <span class="fn">perimeter</span>(self) -> <span class="ty">f64</span> {
+    <span class="kw">return</span> <span class="nm">2.0</span> * <span class="nm">3.14159265</span> * self.radius;
+}
+
+<span class="kw">fn</span> (<span class="ty">Circle</span>) <span class="fn">describe</span>(self) -> <span class="ty">str</span> {
+    <span class="kw">return</span> <span class="bi">fmt</span>(<span class="st">"Circle(r={})"</span>, self.radius);
+}
+
+<span class="cm">// Pointer receiver: mutates the Circle in place.</span>
+<span class="kw">fn</span> (<span class="op">*</span><span class="ty">Circle</span>) <span class="fn">scale</span>(self, factor: <span class="ty">f64</span>) {
+    self.radius *= factor;
+}
+
+<span class="cm">// ── Methods on Rect ───────────────────────────────────</span>
+
+<span class="kw">fn</span> (<span class="ty">Rect</span>) <span class="fn">area</span>(self) -> <span class="ty">f64</span> {
+    <span class="kw">return</span> self.width * self.height;
+}
+
+<span class="kw">fn</span> (<span class="ty">Rect</span>) <span class="fn">perimeter</span>(self) -> <span class="ty">f64</span> {
+    <span class="kw">return</span> <span class="nm">2.0</span> * (self.width + self.height);
+}
+
+<span class="kw">fn</span> (<span class="ty">Rect</span>) <span class="fn">describe</span>(self) -> <span class="ty">str</span> {
+    <span class="kw">return</span> <span class="bi">fmt</span>(<span class="st">"Rect({}x{})"</span>, self.width, self.height);
+}
+
+<span class="kw">fn</span> (<span class="op">*</span><span class="ty">Rect</span>) <span class="fn">scale</span>(self, factor: <span class="ty">f64</span>) {
+    self.width  *= factor;
+    self.height *= factor;
+}
+</code></pre>
+
+    <hr class="divider">
+
+    <div class="code-label">shapes.forge — static dispatch via generic constraint</div>
+    <pre><code><span class="cm">// T must satisfy Shape — resolved at compile time (monomorphized).</span>
+<span class="cm">// Separate compiled versions for Circle and Rect — zero overhead.</span>
+<span class="kw">fn</span> <span class="fn">print_info</span>&lt;<span class="ty">T</span>: <span class="ty">Shape</span>&gt;(s: <span class="ty">T</span>) {
+    <span class="bi">print</span>(<span class="st">"{}"</span>,          s.<span class="fn">describe</span>());
+    <span class="bi">print</span>(<span class="st">"  area      = {:.4}"</span>, s.<span class="fn">area</span>());
+    <span class="bi">print</span>(<span class="st">"  perimeter = {:.4}"</span>, s.<span class="fn">perimeter</span>());
+}
+
+<span class="cm">// Constraint can also be a type constraint group.</span>
+<span class="cm">// `Scalable` is any type that has both Shape methods and scale().</span>
+<span class="kw">interface</span> <span class="ty">Scalable</span> {
+    <span class="kw">fn</span> <span class="fn">area</span>(self)      -> <span class="ty">f64</span>;
+    <span class="kw">fn</span> <span class="fn">perimeter</span>(self) -> <span class="ty">f64</span>;
+    <span class="kw">fn</span> <span class="fn">describe</span>(self)  -> <span class="ty">str</span>;
+    <span class="kw">fn</span> <span class="fn">scale</span>(<span class="op">*</span>self, factor: <span class="ty">f64</span>);  <span class="cm">// pointer receiver required</span>
+}
+
+<span class="kw">fn</span> <span class="fn">scale_and_print</span>&lt;<span class="ty">T</span>: <span class="ty">Scalable</span>&gt;(s: <span class="op">*</span><span class="ty">T</span>, factor: <span class="ty">f64</span>) {
+    s.<span class="fn">scale</span>(factor);                       <span class="cm">// mutates in place</span>
+    <span class="bi">print</span>(<span class="st">"{} after scale({})"</span>, s.<span class="fn">describe</span>(), factor);
+    <span class="bi">print</span>(<span class="st">"  new area = {:.4}"</span>, s.<span class="fn">area</span>());
+}
+</code></pre>
+
+    <hr class="divider">
+
+    <div class="code-label">shapes.forge — dynamic dispatch via interface value</div>
+    <pre><code><span class="cm">// `Shape` used as a concrete type = dynamic dispatch (vtable).</span>
+<span class="cm">// `shapes` is a slice of interface values — each may be a different type.</span>
+<span class="kw">fn</span> <span class="fn">total_area</span>(shapes: [<span class="ty">Shape</span>]) -> <span class="ty">f64</span> {
+    <span class="kw">let</span> sum: <span class="ty">f64</span> = <span class="nm">0.0</span>;
+    <span class="kw">let</span> i: <span class="ty">u64</span>   = <span class="nm">0</span>;
+    <span class="kw">loop</span> {
+        <span class="kw">if</span> i >= <span class="bi">len</span>(shapes) { <span class="kw">break</span>; }
+        sum += shapes[i].<span class="fn">area</span>();   <span class="cm">// vtable call — type resolved at runtime</span>
+        i += <span class="nm">1</span>;
+    }
+    <span class="kw">return</span> sum;
+}
+</code></pre>
+
+    <hr class="divider">
+
+    <div class="code-label">shapes.forge — main</div>
+    <pre><code><span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="cm">// Stack-allocated structs — no @heap needed for simple local use.</span>
+    <span class="kw">let</span> c: <span class="ty">Circle</span> = <span class="ty">Circle</span>{ .radius = <span class="nm">5.0</span> };
+    <span class="kw">let</span> r: <span class="ty">Rect</span>   = <span class="ty">Rect</span>  { .width = <span class="nm">4.0</span>, .height = <span class="nm">6.0</span> };
+
+    <span class="cm">// Static dispatch — compiler generates Circle-specific code.</span>
+    <span class="fn">print_info</span>(c);
+    <span class="fn">print_info</span>(r);
+
+    <span class="bi">print</span>(<span class="st">"---"</span>);
+
+    <span class="cm">// Pointer receiver — scale() mutates in place.</span>
+    <span class="cm">// Compiler auto-takes &amp;c and &amp;r (auto-reference rule).</span>
+    <span class="fn">scale_and_print</span>(&amp;c, <span class="nm">2.0</span>);
+    <span class="fn">scale_and_print</span>(&amp;r, <span class="nm">0.5</span>);
+
+    <span class="bi">print</span>(<span class="st">"---"</span>);
+
+    <span class="cm">// Dynamic dispatch — mixed slice of Shape interface values.</span>
+    <span class="kw">let</span> shapes: [<span class="ty">Shape</span>] = [c, r];   <span class="cm">// c and r are boxed into interface values</span>
+    <span class="bi">print</span>(<span class="st">"total area = {:.4}"</span>, <span class="fn">total_area</span>(shapes));
+
+    <span class="kw">let</span> i: <span class="ty">u64</span> = <span class="nm">0</span>;
+    <span class="kw">loop</span> {
+        <span class="kw">if</span> i >= <span class="bi">len</span>(shapes) { <span class="kw">break</span>; }
+        <span class="bi">print</span>(<span class="st">"  {}"</span>, shapes[i].<span class="fn">describe</span>());
+        i += <span class="nm">1</span>;
+    }
+}
+</code></pre>
+
+    <div class="output-label">Output</div>
+    <div class="output">Circle(r=5)<br>  area      = 78.5398<br>  perimeter = 31.4159<br>Rect(4x6)<br>  area      = 24.0000<br>  perimeter = 20.0000<br>---<br>Circle(r=10) after scale(2)<br>  new area = 314.1593<br>Rect(2x3) after scale(0.5)<br>  new area = 6.0000<br>---<br>total area = 320.1593<br>  Circle(r=10)<br>  Rect(2x3)</div>
+
+    <div class="callouts">
+      <div class="callout"><div class="icon">&#128204;</div><div><strong>No <code>implements</code> declaration.</strong> <span><code>Circle</code> and <code>Rect</code> satisfy <code>Shape</code> automatically because they have the right methods. The compiler checks this at the call site.</span></div></div>
+      <div class="callout"><div class="icon">&#128204;</div><div><strong>Static vs. dynamic dispatch.</strong> <span><code>print_info&lt;T: Shape&gt;</code> is monomorphized — one compiled copy per concrete type, zero vtable overhead. <code>total_area([Shape])</code> uses a vtable — necessary because the slice holds mixed types.</span></div></div>
+      <div class="callout"><div class="icon">&#128204;</div><div><strong>Auto-reference on pointer receivers.</strong> <span><code>scale_and_print(&amp;c, 2.0)</code> passes a <code>*Circle@stack</code>. Inside the function, calling <code>s.scale(factor)</code> routes to <code>fn (*Circle) scale</code> — no explicit dereference needed.</span></div></div>
+      <div class="callout"><div class="icon">&#128204;</div><div><strong>Stack allocation is the default.</strong> <span><code>c</code> and <code>r</code> live entirely on the stack. No heap allocation occurs until they are boxed into the <code>[Shape]</code> interface slice.</span></div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function show(name) {
+    document.querySelectorAll('.example').forEach(e => e.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('ex-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>
